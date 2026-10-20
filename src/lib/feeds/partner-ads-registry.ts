@@ -32,6 +32,8 @@ export const PARTNER_ADS_FEEDS: readonly PartnerAdsFeedConfig[] = [
   { feedId: "4090", bannerId: "114827", label: "IdHAIR" },
   { feedId: "522", bannerId: "42807", label: "Med24" },
   { feedId: "4347", bannerId: "117147", label: "Barnetsrum" },
+  { feedId: "3461", bannerId: "108173", label: "DH Wines" },
+  { feedId: "3860", bannerId: "112662", label: "SPS Wine" },
 ] as const;
 
 export function partnerAdsProviderKey(feedId: string): string {
