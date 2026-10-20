@@ -23,6 +23,7 @@ cp .env.example .env
 | `OPENAI_API_KEY` | Til AI-“hvorfor” | Server-side only |
 | `OPENAI_MODEL` | Nej | Default `gpt-4o-mini` |
 | `ADMIN_SECRET` | Til admin-import | `Authorization: Bearer …` |
+| `CRON_SECRET` | Vercel Cron feed-import | Autofyldt af Vercel Cron som Bearer-token |
 | `NEXT_PUBLIC_SITE_URL` | SEO | Fx `http://localhost:3000` |
 
 Uden OpenAI-nøgle virker finderen stadig med skabelon-begrundelser. Uden Postgres kan appen bygges, men import/finder kræver DB.
@@ -112,6 +113,8 @@ Dækker normalize, rank, Zod-schemas, Partner Ads-mapping, FTS-helpers og finder
 - `src/lib/finder.ts` — FTS-kandidater → tekst/budget-ranking → OpenAI “hvorfor” (kun rigtige IDs)
 - `src/app/api/find` — gavefinder API
 - `src/app/api/admin/import` — beskyttet re-import
+- `src/app/api/cron/import-feeds` — Vercel Cron: én Partner Ads-feed pr. kørsel
+- Vercel build kører `prisma migrate deploy` automatisk
 
 Import regenererer `Product.searchVector` (vægtet title/brand/category/tags/description) ved hvert upsert, så nye feeds er søgbare med det samme.
 

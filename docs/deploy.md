@@ -8,15 +8,16 @@
    - `OPENAI_API_KEY`
    - `ADMIN_SECRET`
    - `NEXT_PUBLIC_SITE_URL` — production URL (fx `https://gavegenie.dk`)
-3. Build command: `prisma generate && next build` (allerede i `npm run build`).
-4. Efter første deploy: kør migrationer og Partner Ads-import mod prod-DB:
+3. Build command: `prisma migrate deploy && prisma generate && next build` (allerede i `npm run build`) — migrationer kører automatisk ved hvert Vercel-deploy med prod-`DATABASE_URL`.
+4. Partner Ads-import: Vercel Cron (`vercel.json`) kalder `/api/cron/import-feeds` hvert 5. minut og importerer **én** forfalden feed pr. kørsel (undgår serverless-timeout). Kræver env `CRON_SECRET` (Vercel sender den automatisk som `Authorization: Bearer …`). `ADMIN_SECRET` virker også til manuel trigger.
+
+Manuel fuld sync (CLI, anbefalet første gang / store feeds):
 
 ```bash
-DATABASE_URL="postgresql://…" npx prisma migrate deploy
 DATABASE_URL="postgresql://…" npm run import:feed
 ```
 
-`npm run import:feed` synkroniserer feeds i `src/lib/feeds/partner-ads-registry.ts` og regenererer Postgres `searchVector` (FTS) på hvert produkt. Feeds springes over hvis de er importeret inden for `FEED_CACHE_TTL_HOURS` (default 24h), så Partner Ads ikke rammes unødigt. Gavefinderen downloader aldrig feeds — den søger kun i Postgres via GIN/`tsvector`. Booktok/Med24 er store — kør fuld sync via CLI (ikke kun serverless admin). `FORCE_FEED_REFRESH=1` kun ved bevidst refresh.
+`npm run import:feed` synkroniserer feeds i `src/lib/feeds/partner-ads-registry.ts` og regenererer Postgres `searchVector` (FTS) på hvert produkt. Feeds springes over hvis de er importeret inden for `FEED_CACHE_TTL_HOURS` (default 24h). Gavefinderen downloader aldrig feeds — kun cron/CLI/admin. `FORCE_FEED_REFRESH=1` kun ved bevidst refresh.
 
 Alternativt admin-API (mindre feeds / enkelt shop):
 
