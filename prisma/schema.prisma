@@ -1,0 +1,58 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Retailer {
+  id        String    @id @default(cuid())
+  slug      String    @unique
+  name      String
+  website   String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  products  Product[]
+}
+
+model Product {
+  id          String    @id @default(cuid())
+  /// Provider/feed key, e.g. "sample-dev"
+  provider    String
+  /// External ID from the feed; unique together with provider
+  externalId  String
+  retailerId  String
+  retailer    Retailer  @relation(fields: [retailerId], references: [id])
+  title       String
+  description String?
+  brand       String?
+  category    String?
+  tags        String[]  @default([])
+  priceOre    Int?
+  currency    String    @default("DKK")
+  imageUrl    String?
+  productUrl  String
+  inStock     Boolean?
+  /// True when this row comes from a development/sample feed
+  isSample    Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@unique([provider, externalId])
+  @@index([priceOre])
+  @@index([category])
+  @@index([isSample])
+}
+
+model FeedImport {
+  id           String   @id @default(cuid())
+  provider     String
+  source       String
+  status       String
+  productCount Int      @default(0)
+  message      String?
+  startedAt    DateTime @default(now())
+  finishedAt   DateTime?
+}
