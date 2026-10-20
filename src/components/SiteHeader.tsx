@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
+import { BrandWordmark } from "./BrandWordmark";
 
 export function SiteHeader() {
   const pathname = usePathname();
@@ -28,7 +29,7 @@ export function SiteHeader() {
     <header className={headerClass}>
       <div className="site-header__inner">
         <Link href="/" className="wordmark" aria-label="GaveGenie forsiden">
-          GaveGenie
+          <BrandWordmark />
         </Link>
         {isHome ? (
           <a className="site-header__skip" href="#gave-soegning">

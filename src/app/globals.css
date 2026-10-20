@@ -93,6 +93,10 @@ a {
   color: var(--cream);
 }
 
+.site-header--over-hero .brand-wordmark__mark {
+  color: #fff;
+}
+
 .site-header--over-hero.site-header--scrolled {
   background: rgba(7, 21, 37, 0.78);
   backdrop-filter: blur(14px);
@@ -151,6 +155,56 @@ a {
 
 .site-header--solid .wordmark:hover {
   color: var(--gold);
+}
+
+/* —— Brand wordmark + outlined genie —— */
+.brand-wordmark {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.42em;
+  margin: 0;
+  line-height: 1;
+}
+
+.brand-wordmark__mark {
+  flex-shrink: 0;
+  width: 0.92em;
+  height: 0.92em;
+  color: inherit;
+  opacity: 0.95;
+  transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.wordmark:hover .brand-wordmark__mark {
+  transform: translateY(-1px) rotate(-4deg);
+}
+
+.brand-wordmark__text {
+  display: inline-block;
+}
+
+.hero__brand .brand-wordmark__mark {
+  width: 0.78em;
+  height: 0.78em;
+  color: #fff;
+  filter: drop-shadow(0 1px 0 rgba(7, 21, 37, 0.15));
+  animation: genie-float 4.5s ease-in-out infinite;
+}
+
+.site-footer__brand .brand-wordmark__mark {
+  width: 0.85em;
+  height: 0.85em;
+  color: #fff;
+}
+
+@keyframes genie-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-0.06em);
+  }
 }
 
 /* —— Footer —— */
@@ -771,6 +825,10 @@ a {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+  }
+
+  .hero__brand .brand-wordmark__mark {
+    animation: none;
   }
 }
 

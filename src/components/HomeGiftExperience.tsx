@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useId, useRef, useState, startTransition } from "react";
+import { BrandWordmark } from "./BrandWordmark";
 import { ProductCard } from "./ProductCard";
 import type { GiftRecommendation } from "@/lib/types";
 
@@ -95,7 +96,7 @@ export function HomeGiftExperience() {
         </div>
 
         <div className="hero__content">
-          <p className="hero__brand">GaveGenie</p>
+          <BrandWordmark as="p" className="hero__brand" />
           <h1 className="hero__headline">Find gaven, der rammer plet.</h1>
           <p className="hero__lead">
             Fortæl os lidt om personen, så finder vi gaver, der passer til deres

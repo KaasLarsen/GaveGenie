@@ -1,10 +1,11 @@
 import Link from "next/link";
+import { BrandWordmark } from "./BrandWordmark";
 
 export function SiteFooter() {
   return (
     <footer className="site-footer">
       <div className="site-footer__inner">
-        <p className="site-footer__brand">GaveGenie</p>
+        <BrandWordmark as="p" className="site-footer__brand" />
         <p className="site-footer__note">
           Gaveforslag matchet med AI — med tydelig affiliate-oplysning.
         </p>
