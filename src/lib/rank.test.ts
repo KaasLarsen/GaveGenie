@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { filterByBudget, rankProducts, type RankableProduct } from "./rank";
+import {
+  diversifyByRetailer,
+  filterByBudget,
+  rankProducts,
+  type RankableProduct,
+} from "./rank";
 
 const catalog: RankableProduct[] = [
   {
@@ -57,16 +62,17 @@ describe("rankProducts", () => {
     expect(ranked[0]?.id).toBe("1");
   });
 
-  it("prefers products inside budget", () => {
+  it("prefers products inside budget when interest is weak", () => {
     const ranked = rankProducts(catalog, {
-      query: "gave",
+      query: "bolig",
       budgetMaxOre: 40000,
     });
-    // Soft ranking: expensive items may remain but should score lower
     const luxury = ranked.find((r) => r.id === "3");
     const mug = ranked.find((r) => r.id === "1");
-    expect(luxury && mug).toBeTruthy();
-    expect(mug!.score).toBeGreaterThan(luxury!.score);
+    expect(mug).toBeTruthy();
+    if (luxury && mug) {
+      expect(mug.score).toBeGreaterThan(luxury.score);
+    }
   });
 
   it("never invents product ids", () => {
@@ -74,6 +80,122 @@ describe("rankProducts", () => {
     for (const item of ranked) {
       expect(["1", "2", "3"]).toContain(item.id);
     }
+  });
+
+  it("prefers wine gifts over herrebukser for a mom who loves wine", () => {
+    const mixed: RankableProduct[] = [
+      {
+        id: "pants",
+        title: "Herrebukser slim fit sort",
+        description: "Bukser til mænd",
+        brand: "Justcool",
+        category: "Tøj",
+        tags: ["herre", "bukser"],
+        priceOre: 39900,
+        currency: "DKK",
+        imageUrl: null,
+        productUrl: "https://example.com/pants",
+        inStock: true,
+        isSample: false,
+        retailerName: "Justcool.dk",
+      },
+      {
+        id: "wine",
+        title: "Rødvin gaveæske Rioja",
+        description: "Lækker vin til gaven",
+        brand: "DH Wines",
+        category: "Vin",
+        tags: ["vin", "rødvin", "gave"],
+        priceOre: 24900,
+        currency: "DKK",
+        imageUrl: null,
+        productUrl: "https://example.com/wine",
+        inStock: true,
+        isSample: false,
+        retailerName: "DH Wines",
+      },
+      {
+        id: "winter",
+        title: "Vinterjakke dame",
+        description: "Varm jakke",
+        brand: "Justcool",
+        category: "Tøj",
+        tags: ["vinter", "jakke"],
+        priceOre: 79900,
+        currency: "DKK",
+        imageUrl: null,
+        productUrl: "https://example.com/winter",
+        inStock: true,
+        isSample: false,
+        retailerName: "Justcool.dk",
+      },
+    ];
+
+    const ranked = rankProducts(
+      mixed,
+      { query: "søde mor på 65 som elsker vin" },
+      3,
+    );
+    expect(ranked[0]?.id).toBe("wine");
+    expect(ranked.find((r) => r.id === "pants")).toBeFalsy();
+  });
+
+  it("spreads results across retailers", () => {
+    const sameShop: RankableProduct[] = Array.from({ length: 8 }, (_, i) => ({
+      id: `jc-${i}`,
+      title: `Vinglas sæt ${i}`,
+      description: "Glas til vin",
+      brand: "Justcool",
+      category: "Bolig",
+      tags: ["vin", "glas"],
+      priceOre: 19900 + i * 100,
+      currency: "DKK",
+      imageUrl: null,
+      productUrl: `https://example.com/${i}`,
+      inStock: true,
+      isSample: false,
+      retailerName: "Justcool.dk",
+    }));
+    const other: RankableProduct = {
+      id: "dh-1",
+      title: "Økologisk rødvin",
+      description: "Vin",
+      brand: "DH",
+      category: "Vin",
+      tags: ["vin"],
+      priceOre: 17900,
+      currency: "DKK",
+      imageUrl: null,
+      productUrl: "https://example.com/dh",
+      inStock: true,
+      isSample: false,
+      retailerName: "DH Wines",
+    };
+
+    const ranked = rankProducts(
+      [...sameShop, other],
+      { query: "vin til mor" },
+      3,
+    );
+    const retailers = new Set(ranked.map((r) => r.retailerName));
+    expect(retailers.has("DH Wines")).toBe(true);
+    expect(
+      ranked.filter((r) => r.retailerName === "Justcool.dk").length,
+    ).toBeLessThanOrEqual(2);
+    expect(ranked).toHaveLength(3);
+  });
+});
+
+describe("diversifyByRetailer", () => {
+  it("caps items per retailer before filling", () => {
+    const items = [
+      { id: "1", retailerName: "A", score: 1 },
+      { id: "2", retailerName: "A", score: 0.9 },
+      { id: "3", retailerName: "A", score: 0.8 },
+      { id: "4", retailerName: "B", score: 0.7 },
+    ];
+    const out = diversifyByRetailer(items, 3, 2);
+    expect(out.map((i) => i.id)).toEqual(["1", "2", "4"]);
   });
 });
 

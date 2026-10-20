@@ -1,6 +1,7 @@
 import { Prisma } from "@prisma/client";
 import { prisma } from "./db";
-import { normalizeText, tokenizeForSearch } from "./normalize";
+import { analyzeGiftIntent } from "./gift-intent";
+import { normalizeText } from "./normalize";
 import type { GiftPreferences } from "./types";
 
 export { DANISH_SEARCH_STOPWORDS } from "./normalize";
@@ -14,9 +15,9 @@ export const CANDIDATE_LIMIT = 300;
 
 /**
  * Minimum in-memory rank score to keep a recommendation.
- * Pure budget/stock hits without text overlap land ~0.12–0.25.
+ * Requires real interest overlap — budget-only hits stay below this.
  */
-export const MIN_RELEVANCE_SCORE = 0.28;
+export const MIN_RELEVANCE_SCORE = 0.35;
 
 export type SearchDocumentParts = {
   title: string;
@@ -43,38 +44,43 @@ export function buildWeightedSearchParts(product: {
 }
 
 /**
- * Tokenize preferences for FTS: normalize, drop stopwords, prefer longer tokens.
+ * Tokens used for FTS retrieval.
+ * Prefer interest words (vin, kaffe…) so recipient filler ("mor", "elsker")
+ * does not pull unrelated catalog rows. Falls back to all search tokens.
  */
 export function preferenceSearchTokens(preferences: GiftPreferences): string[] {
-  const blob = [
-    preferences.query,
-    preferences.recipient,
-    preferences.occasion,
-    preferences.style,
-  ]
-    .filter(Boolean)
-    .join(" ");
+  const intent = analyzeGiftIntent(preferences);
+  const primary =
+    intent.interestTokens.length > 0
+      ? intent.interestTokens
+      : intent.allTokens;
 
-  const tokens = tokenizeForSearch(blob);
+  return [...primary].sort((a, b) => b.length - a.length).slice(0, 12);
+}
 
-  return [...new Set(tokens)]
-    .sort((a, b) => b.length - a.length)
-    .slice(0, 12);
+function sanitizeTsTerm(token: string): string | null {
+  // Keep Danish letters — simple FTS config indexes them as-is
+  const term = token.replace(/[^a-z0-9æøå]/gi, "");
+  if (term.length < 2) return null;
+  return term;
 }
 
 /**
- * Build a safe `simple` to_tsquery string (OR of prefix terms).
- * Returns null when no usable tokens remain.
+ * Build a safe `simple` to_tsquery string.
+ * Short tokens (≤3) stay exact so `vin` does not match `vinter`.
+ * Longer tokens get prefix match for compound titles.
  */
 export function buildTsQueryString(tokens: string[]): string | null {
   const terms = tokens
-    .map((t) => t.replace(/[^a-z0-9]/gi, ""))
-    .filter((t) => t.length > 1);
+    .map(sanitizeTsTerm)
+    .filter((t): t is string => Boolean(t));
 
   if (terms.length === 0) return null;
 
-  // Prefix match (`kaffe:*`) improves recall on compound Danish product titles
-  return [...new Set(terms)].map((t) => `${t}:*`).join(" | ");
+  const unique = [...new Set(terms)];
+  return unique
+    .map((t) => (t.length <= 3 ? t : `${t}:*`))
+    .join(" | ");
 }
 
 /** Prisma WHERE for sample exclusion + soft budget (no text filter). */
