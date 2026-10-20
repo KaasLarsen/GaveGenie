@@ -1,6 +1,9 @@
 import { readFileSync } from "node:fs";
+import { mkdtemp, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
 import path from "node:path";
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { writeFeedCache } from "./feed-cache";
 import {
   mapPartnerAdsProduct,
   parsePartnerAdsXml,
@@ -93,6 +96,12 @@ describe("parsePartnerAdsXml", () => {
 });
 
 describe("PartnerAdsAdapter", () => {
+  let cacheDir: string;
+
+  afterEach(async () => {
+    if (cacheDir) await rm(cacheDir, { recursive: true, force: true });
+  });
+
   it("loads from xmlOverride without network", async () => {
     const feed = PARTNER_ADS_FEEDS[0];
     const adapter = new PartnerAdsAdapter(feed, { xmlOverride: fixtureXml });
@@ -102,5 +111,29 @@ describe("PartnerAdsAdapter", () => {
     expect(result.provider).toBe(`partner-ads-${feed.feedId}`);
     expect(result.products.length).toBe(2);
     expect(result.source).toContain(`feedid=${feed.feedId}`);
+    expect(adapter.lastLoadMeta?.cacheHit).toBe("override");
+  });
+
+  it("serves fresh disk cache without calling fetch", async () => {
+    cacheDir = await mkdtemp(path.join(tmpdir(), "gg-pa-"));
+    const feed = PARTNER_ADS_FEEDS.find((f) => f.feedId === "3590")!;
+    await writeFeedCache(
+      feed.feedId,
+      fixtureXml,
+      {
+        fetchedAt: new Date().toISOString(),
+        sourceUrl: "https://example.com/feed",
+      },
+      { cacheDir },
+    );
+
+    const fetchFn = vi.fn();
+    const adapter = new PartnerAdsAdapter(feed, { fetchFn, cacheDir });
+    const result = await adapter.load();
+
+    expect(fetchFn).not.toHaveBeenCalled();
+    expect(result.products.length).toBe(2);
+    expect(adapter.lastLoadMeta?.cacheHit).toBe("disk");
+    expect(result.source).toContain("#cache=disk");
   });
 });

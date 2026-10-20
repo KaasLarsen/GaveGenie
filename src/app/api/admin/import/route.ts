@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
 import { SampleFeedAdapter } from "@/lib/feeds/sample-adapter";
-import { PartnerAdsAdapter } from "@/lib/feeds/partner-ads-adapter";
 import {
   getPartnerAdsFeedById,
   getPartnerAdsFeedByProvider,
   PARTNER_ADS_FEEDS,
 } from "@/lib/feeds/partner-ads-registry";
-import { importFeed, type ImportResult } from "@/lib/feeds/import";
+import { importPartnerAdsFeed } from "@/lib/feeds/partner-ads-import";
+import { importFeed } from "@/lib/feeds/import";
 
 export const runtime = "nodejs";
 /** Large feeds (esp. Booktok) may exceed serverless limits — prefer CLI for full sync. */
@@ -19,6 +19,8 @@ function unauthorized() {
 type ImportBody = {
   provider?: string;
   feedId?: string;
+  /** Bypass TTL skip + disk cache (costs Partner Ads bandwidth) */
+  force?: boolean;
 };
 
 /**
@@ -26,12 +28,13 @@ type ImportBody = {
  * Authorization: Bearer <ADMIN_SECRET>
  * Body (optional):
  *   { "provider": "sample-dev" }
- *   { "provider": "partner-ads" }           // all registry feeds
+ *   { "provider": "partner-ads" }           // all registry feeds (respects TTL)
  *   { "provider": "partner-ads-2437" }      // one feed
- *   { "feedId": "2437" }                    // one feed by id
+ *   { "feedId": "2437", "force": true }     // one feed, ignore TTL
  *
- * Note: Full Partner Ads sync (esp. Booktok ~99k) is best run via
- * `npm run import:feed` to avoid serverless timeouts.
+ * Gift search never downloads Partner Ads feeds. This endpoint (and the CLI)
+ * are the only places that hit feed URLs. Fresh imports within FEED_CACHE_TTL_HOURS
+ * (default 24h) are skipped unless force=true.
  */
 export async function POST(request: Request) {
   const secret = process.env.ADMIN_SECRET;
@@ -57,6 +60,7 @@ export async function POST(request: Request) {
 
   const provider = body.provider?.trim() || "partner-ads";
   const feedId = body.feedId?.trim();
+  const force = Boolean(body.force);
 
   try {
     if (provider === "sample-dev") {
@@ -70,24 +74,16 @@ export async function POST(request: Request) {
     }
 
     if (provider === "partner-ads" && !feedId) {
-      const results: Array<ImportResult | { error: string; feedId: string }> =
-        [];
+      const results = [];
       for (const feed of PARTNER_ADS_FEEDS) {
-        try {
-          results.push(await importFeed(new PartnerAdsAdapter(feed)));
-        } catch (error) {
-          results.push({
-            feedId: feed.feedId,
-            error: error instanceof Error ? error.message : "Import failed",
-          });
-        }
+        results.push(await importPartnerAdsFeed(feed, { force }));
       }
       return NextResponse.json({
         ok: true,
         provider: "partner-ads",
         results,
         notice:
-          "Large feeds may time out on serverless — use npm run import:feed for a full sync.",
+          "Skips feeds imported within TTL unless force=true. Prefer CLI for full sync of large feeds.",
       });
     }
 
@@ -106,11 +102,12 @@ export async function POST(request: Request) {
       );
     }
 
-    const result = await importFeed(new PartnerAdsAdapter(feed));
+    const result = await importPartnerAdsFeed(feed, { force });
     return NextResponse.json({
-      ok: true,
       ...result,
-      notice: "Imported live Partner Ads products.",
+      notice: result.skipped
+        ? "Skipped — last import still within TTL. Pass force=true to refresh."
+        : "Imported live Partner Ads products.",
     });
   } catch (error) {
     console.error("admin import failed", error);

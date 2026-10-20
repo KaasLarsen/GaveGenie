@@ -34,7 +34,9 @@ npx prisma migrate dev --name init
 npm run import:feed
 ```
 
-`npm run import:feed` henter alle Partner Ads-feeds fra registry’et ([`src/lib/feeds/partner-ads-registry.ts`](src/lib/feeds/partner-ads-registry.ts)) og upsert’er dem i Postgres (`isSample=false`).
+`npm run import:feed` synkroniserer Partner Ads-feeds fra registry’et ([`src/lib/feeds/partner-ads-registry.ts`](src/lib/feeds/partner-ads-registry.ts)) til Postgres (`isSample=false`).
+
+**Vigtigt om omkostninger:** Gavefinderen læser **kun Postgres**. Partner Ads-XML hentes kun ved eksplicit import. Standard TTL er **24 timer** (`FEED_CACHE_TTL_HOURS`) — inden for vinduet springes både netværkshentning og DB-import over. XML caches også lokalt under `data/feeds/cache/`. Brug `FORCE_FEED_REFRESH=1` kun når du bevidst vil hente igen.
 
 Til lokal DEV med sample-data:
 
@@ -42,10 +44,11 @@ Til lokal DEV med sample-data:
 IMPORT_SAMPLE=1 npm run import:feed
 ```
 
-Én shop:
+Én shop / tvungen refresh:
 
 ```bash
 FEED_ID=2437 npm run import:feed
+FORCE_FEED_REFRESH=1 npm run import:feed
 ```
 
 Admin-import:

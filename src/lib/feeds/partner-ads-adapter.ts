@@ -4,6 +4,11 @@ import { assertNormalizedProduct, dkkToOre } from "../normalize";
 import type { NormalizedProduct } from "../types";
 import type { FeedAdapter, FeedLoadResult } from "./types";
 import {
+  readFeedCache,
+  readFeedCacheIgnoringTtl,
+  writeFeedCache,
+} from "./feed-cache";
+import {
   buildPartnerAdsFeedUrl,
   partnerAdsProviderKey,
   type PartnerAdsFeedConfig,
@@ -187,45 +192,112 @@ export type PartnerAdsAdapterOptions = {
   fetchFn?: typeof fetch;
   /** Inject preloaded XML instead of fetching (tests) */
   xmlOverride?: string;
+  /** Bypass disk cache and conditional GET */
+  forceRefresh?: boolean;
+  /** Override cache directory (tests) */
+  cacheDir?: string;
+};
+
+export type PartnerAdsLoadMeta = {
+  /** Where the XML came from for this load */
+  cacheHit: "memory" | "disk" | "http-304" | "http-200" | "override";
 };
 
 /**
  * Live Partner Ads feed adapter — one instance per shop/feed.
+ * Uses on-disk XML cache (TTL) so we do not re-download large feeds constantly.
+ * Gift search never calls this — only explicit import jobs do.
  */
 export class PartnerAdsAdapter implements FeedAdapter {
   readonly provider: string;
   readonly feed: PartnerAdsFeedConfig;
   private readonly fetchFn: typeof fetch;
   private readonly xmlOverride?: string;
+  private readonly forceRefresh: boolean;
+  private readonly cacheDir?: string;
+  lastLoadMeta: PartnerAdsLoadMeta | null = null;
 
   constructor(feed: PartnerAdsFeedConfig, options: PartnerAdsAdapterOptions = {}) {
     this.feed = feed;
     this.provider = partnerAdsProviderKey(feed.feedId);
     this.fetchFn = options.fetchFn ?? fetch;
     this.xmlOverride = options.xmlOverride;
+    this.forceRefresh = Boolean(options.forceRefresh);
+    this.cacheDir = options.cacheDir;
   }
 
   async load(): Promise<FeedLoadResult> {
     const source = buildPartnerAdsFeedUrl(this.feed);
     let xml: string;
+    let cacheHit: PartnerAdsLoadMeta["cacheHit"] = "http-200";
 
     if (this.xmlOverride !== undefined) {
       xml = this.xmlOverride;
+      cacheHit = "override";
     } else {
-      const response = await this.fetchFn(source, {
-        headers: {
+      const cached = await readFeedCache(this.feed.feedId, {
+        cacheDir: this.cacheDir,
+        force: this.forceRefresh,
+      });
+
+      if (cached) {
+        xml = cached.xml;
+        cacheHit = "disk";
+      } else {
+        const headers: Record<string, string> = {
           Accept: "application/xml, text/xml, text/html, */*",
           "User-Agent": "GaveGenieFeedImporter/1.0",
-        },
-      });
-      if (!response.ok) {
-        throw new Error(
-          `Partner Ads feed ${this.feed.feedId} (${this.feed.label}) HTTP ${response.status}`,
-        );
+        };
+
+        // Conditional GET when stale cache exists (save Partner Ads bandwidth)
+        const softMeta = await readFeedCacheIgnoringTtl(this.feed.feedId, {
+          cacheDir: this.cacheDir,
+        });
+        if (softMeta?.meta.etag) {
+          headers["If-None-Match"] = softMeta.meta.etag;
+        }
+        if (softMeta?.meta.lastModified) {
+          headers["If-Modified-Since"] = softMeta.meta.lastModified;
+        }
+
+        const response = await this.fetchFn(source, { headers });
+
+        if (response.status === 304 && softMeta) {
+          xml = softMeta.xml;
+          cacheHit = "http-304";
+          await writeFeedCache(
+            this.feed.feedId,
+            xml,
+            {
+              fetchedAt: new Date().toISOString(),
+              etag: softMeta.meta.etag,
+              lastModified: softMeta.meta.lastModified,
+              sourceUrl: source,
+            },
+            { cacheDir: this.cacheDir },
+          );
+        } else if (!response.ok) {
+          throw new Error(
+            `Partner Ads feed ${this.feed.feedId} (${this.feed.label}) HTTP ${response.status}`,
+          );
+        } else {
+          const buffer = Buffer.from(await response.arrayBuffer());
+          xml = buffer.toString("latin1");
+          cacheHit = "http-200";
+          await writeFeedCache(
+            this.feed.feedId,
+            xml,
+            {
+              fetchedAt: new Date().toISOString(),
+              etag: response.headers.get("etag") ?? undefined,
+              lastModified:
+                response.headers.get("last-modified") ?? undefined,
+              sourceUrl: source,
+            },
+            { cacheDir: this.cacheDir },
+          );
+        }
       }
-      // Feeds are declared iso-8859-1 / latin1
-      const buffer = Buffer.from(await response.arrayBuffer());
-      xml = buffer.toString("latin1");
     }
 
     const products = parsePartnerAdsXml(xml, this.provider);
@@ -235,9 +307,13 @@ export class PartnerAdsAdapter implements FeedAdapter {
       );
     }
 
+    this.lastLoadMeta = { cacheHit };
     return {
       provider: this.provider,
-      source,
+      source:
+        cacheHit === "disk" || cacheHit === "http-304"
+          ? `${source}#cache=${cacheHit}`
+          : source,
       products,
       isDevelopmentData: false,
     };
