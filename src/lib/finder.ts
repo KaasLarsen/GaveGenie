@@ -3,7 +3,19 @@ import { generateDanishWhys, isOpenAiConfigured } from "./ai/openai";
 import { dkkToOre } from "./normalize";
 import { filterByBudget, rankProducts } from "./rank";
 import type { GiftPreferencesInput } from "./schema";
+import {
+  buildBudgetWhere,
+  buildTsQueryString,
+  CANDIDATE_LIMIT,
+  findProductIdsByFts,
+  MIN_RELEVANCE_SCORE,
+  preferenceSearchTokens,
+} from "./search";
 import type { GiftPreferences, GiftRecommendation } from "./types";
+
+export { preferenceSearchTokens } from "./search";
+/** @deprecated Use buildBudgetWhere — kept for callers/tests during transition */
+export { buildBudgetWhere as buildCandidateWhere } from "./search";
 
 export function toPreferences(input: GiftPreferencesInput): GiftPreferences {
   return {
@@ -23,7 +35,7 @@ export function toPreferences(input: GiftPreferencesInput): GiftPreferences {
 }
 
 /**
- * Retrieve candidates from DB, rank by text+budget, optionally enrich with OpenAI whys.
+ * Retrieve candidates via Postgres FTS, rank by text+budget, optionally enrich with OpenAI whys.
  * Never invents products — all IDs must exist in the database.
  */
 export async function findGifts(
@@ -35,11 +47,59 @@ export async function findGifts(
 }> {
   const preferences = toPreferences(input);
 
-  const products = await prisma.product.findMany({
-    include: { retailer: true },
-    take: 200,
-    orderBy: { updatedAt: "desc" },
+  const liveCount = await prisma.product.count({
+    where: { isSample: false },
   });
+  const excludeSamples = liveCount > 0;
+  const tokens = preferenceSearchTokens(preferences);
+  const tsQuery = buildTsQueryString(tokens);
+
+  let products: Array<{
+    id: string;
+    title: string;
+    description: string | null;
+    brand: string | null;
+    category: string | null;
+    tags: string[];
+    priceOre: number | null;
+    currency: string;
+    imageUrl: string | null;
+    productUrl: string;
+    inStock: boolean | null;
+    isSample: boolean;
+    retailer: { name: string };
+  }> = [];
+
+  if (tsQuery) {
+    const ids = await findProductIdsByFts({
+      tsQuery,
+      excludeSamples,
+      preferences,
+      limit: CANDIDATE_LIMIT,
+    });
+
+    if (ids.length > 0) {
+      const found = await prisma.product.findMany({
+        where: { id: { in: ids } },
+        include: { retailer: true },
+      });
+      const byId = new Map(found.map((p) => [p.id, p]));
+      // Preserve FTS rank order
+      products = ids
+        .map((id) => byId.get(id))
+        .filter((p): p is NonNullable<typeof p> => Boolean(p));
+    }
+  }
+
+  // Fallback: FTS too strict / no tokens — soft budget only (still prefer live catalog)
+  if (products.length === 0) {
+    products = await prisma.product.findMany({
+      where: buildBudgetWhere(preferences, { excludeSamples }),
+      include: { retailer: true },
+      take: CANDIDATE_LIMIT,
+      orderBy: { updatedAt: "desc" },
+    });
+  }
 
   const rankable = products.map((p) => ({
     id: p.id,
@@ -63,7 +123,9 @@ export async function findGifts(
     preferences.budgetMaxOre,
   );
 
-  const ranked = rankProducts(filtered, preferences, 6);
+  const ranked = rankProducts(filtered, preferences, 6).filter(
+    (c) => c.score >= MIN_RELEVANCE_SCORE,
+  );
 
   // Re-validate IDs against DB (defense in depth)
   const ids = ranked.map((r) => r.id);

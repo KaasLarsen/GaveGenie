@@ -6,6 +6,7 @@ import {
   normalizeText,
   oreToDkk,
   tokenize,
+  tokenizeForSearch,
 } from "./normalize";
 
 describe("normalize", () => {
@@ -31,6 +32,14 @@ describe("normalize", () => {
 
   it("tokenizes meaningfully", () => {
     expect(tokenize("te til mor")).toEqual(["te", "til", "mor"]);
+  });
+
+  it("drops stopwords for search tokenization", () => {
+    expect(tokenizeForSearch("gave til far der elsker kaffe")).toEqual([
+      "far",
+      "elsker",
+      "kaffe",
+    ]);
   });
 
   it("asserts required normalized fields", () => {

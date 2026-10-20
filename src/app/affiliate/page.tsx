@@ -12,20 +12,20 @@ export default function AffiliatePage() {
     <section className="section section--narrow prose-page">
       <h1>Affiliate-oplysning</h1>
       <p>
-        GaveGenie kan indeholde affiliate-links. Når du køber via et sådant
-        link, kan vi modtage en kommission fra forhandleren — uden at det koster
-        dig ekstra.
+        GaveGenie kan indeholde affiliate-links via Partner Ads. Når du køber
+        via et sådant link, kan vi modtage en kommission fra forhandleren —
+        uden at det koster dig ekstra.
       </p>
       <p>
         Vi opfinder aldrig produkter, priser eller lagerstatus. Forslag kommer
-        fra et importeret katalog. I udviklingsmiljøet kan produkter være
-        markeret som <strong>Eksempel · DEV</strong> — det er fiktive
-        testdata, ikke live tilbud.
+        fra importerede produktfeeds. Produktlinks går via Partner Ads&apos;
+        tracking, så køb kan spores korrekt hos partnerne.
       </p>
       <p>
-        Når rigtige affiliate-feeds tilkobles, vil rettigheder, tracking og
-        disclosure følge partnernes vilkår. Indtil da kan sample-URL&apos;er
-        pege mod placeholder-domæner.
+        I udviklingsmiljøet kan enkelte produkter stadig være markeret som{" "}
+        <strong>Eksempel · DEV</strong> — det er fiktive testdata. Når live
+        kataloget er importeret, prioriterer gavefinderen rigtige affiliate-
+        produkter.
       </p>
       <p>
         Se også <Link href="/om-os">om os</Link> og{" "}

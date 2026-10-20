@@ -9,14 +9,25 @@
    - `ADMIN_SECRET`
    - `NEXT_PUBLIC_SITE_URL` — production URL (fx `https://gavegenie.dk`)
 3. Build command: `prisma generate && next build` (allerede i `npm run build`).
-4. Efter første deploy: kør migrationer mod prod-DB:
+4. Efter første deploy: kør migrationer og Partner Ads-import mod prod-DB:
 
 ```bash
 DATABASE_URL="postgresql://…" npx prisma migrate deploy
 DATABASE_URL="postgresql://…" npm run import:feed
 ```
 
-Eller kald `POST /api/admin/import` med `Authorization: Bearer $ADMIN_SECRET`.
+`npm run import:feed` synkroniserer feeds i `src/lib/feeds/partner-ads-registry.ts` og regenererer Postgres `searchVector` (FTS) på hvert produkt. Feeds springes over hvis de er importeret inden for `FEED_CACHE_TTL_HOURS` (default 24h), så Partner Ads ikke rammes unødigt. Gavefinderen downloader aldrig feeds — den søger kun i Postgres via GIN/`tsvector`. Booktok/Med24 er store — kør fuld sync via CLI (ikke kun serverless admin). `FORCE_FEED_REFRESH=1` kun ved bevidst refresh.
+
+Alternativt admin-API (mindre feeds / enkelt shop):
+
+```bash
+curl -X POST "https://YOUR_DOMAIN/api/admin/import" \
+  -H "Authorization: Bearer $ADMIN_SECRET" \
+  -H "Content-Type: application/json" \
+  -d '{"provider":"partner-ads-2437"}'
+```
+
+Til lokal/dev sample: `IMPORT_SAMPLE=1 npm run import:feed` eller `{"provider":"sample-dev"}`.
 
 ## one.com DNS
 

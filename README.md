@@ -4,7 +4,7 @@ Dansk gavefinder: beskriv personen og anledningen, få forslag fra et produktkat
 
 **Stack:** Next.js (App Router) · TypeScript · Tailwind CSS · Prisma · PostgreSQL · OpenAI (server-side)
 
-> Sample-feedet er **udviklingsdata** (fiktive produkter på `example.com`). Opfind aldrig live produkter, priser eller URL’er.
+> Live katalog kommer fra **Partner Ads**-feeds. Sample-feedet (`IMPORT_SAMPLE=1`) er **udviklingsdata** (fiktive produkter på `example.com`). Opfind aldrig live produkter, priser eller URL’er.
 
 ## Kom i gang
 
@@ -27,23 +27,53 @@ cp .env.example .env
 
 Uden OpenAI-nøgle virker finderen stadig med skabelon-begrundelser. Uden Postgres kan appen bygges, men import/finder kræver DB.
 
-### 3. Database + sample import
+### 3. Database + feed-import
 
 ```bash
 npx prisma migrate dev --name init
 npm run import:feed
 ```
 
-Importen markerer alle varer som `isSample` / **Eksempel · DEV**.
+`npm run import:feed` synkroniserer Partner Ads-feeds fra registry’et ([`src/lib/feeds/partner-ads-registry.ts`](src/lib/feeds/partner-ads-registry.ts)) til Postgres (`isSample=false`).
 
-Admin-import (samme sample-feed):
+**Vigtigt om omkostninger:** Gavefinderen læser **kun Postgres**. Partner Ads-XML hentes kun ved eksplicit import. Standard TTL er **24 timer** (`FEED_CACHE_TTL_HOURS`) — inden for vinduet springes både netværkshentning og DB-import over. XML caches også lokalt under `data/feeds/cache/`. Brug `FORCE_FEED_REFRESH=1` kun når du bevidst vil hente igen.
+
+Til lokal DEV med sample-data:
 
 ```bash
+IMPORT_SAMPLE=1 npm run import:feed
+```
+
+Én shop / tvungen refresh:
+
+```bash
+FEED_ID=2437 npm run import:feed
+FORCE_FEED_REFRESH=1 npm run import:feed
+```
+
+Admin-import:
+
+```bash
+# Alle Partner Ads-feeds (store feeds kan time out på serverless — foretræk CLI)
+curl -X POST http://localhost:3000/api/admin/import \
+  -H "Authorization: Bearer $ADMIN_SECRET" \
+  -H "Content-Type: application/json" \
+  -d '{"provider":"partner-ads"}'
+
+# Én feed
+curl -X POST http://localhost:3000/api/admin/import \
+  -H "Authorization: Bearer $ADMIN_SECRET" \
+  -H "Content-Type: application/json" \
+  -d '{"provider":"partner-ads-2437"}'
+
+# DEV sample
 curl -X POST http://localhost:3000/api/admin/import \
   -H "Authorization: Bearer $ADMIN_SECRET" \
   -H "Content-Type: application/json" \
   -d '{"provider":"sample-dev"}'
 ```
+
+Når live produkter findes, ekskluderer gavefinderen automatisk sample-varer.
 
 ### 4. Kør lokalt
 
@@ -59,7 +89,7 @@ npm run dev
 npm test
 ```
 
-Dækker normalize, rank og Zod-schemas.
+Dækker normalize, rank, Zod-schemas, Partner Ads-mapping, FTS-helpers og finder.
 
 ## Scripts
 
@@ -67,18 +97,23 @@ Dækker normalize, rank og Zod-schemas.
 |---|---|
 | `npm run dev` | Next.js udviklingsserver |
 | `npm run build` / `npm start` | Produktion |
-| `npm run import:feed` | Importer DEV sample-feed |
+| `npm run import:feed` | Importer Partner Ads-feeds (eller sample med `IMPORT_SAMPLE=1`) |
 | `npm test` | Vitest |
 | `npm run lint` | ESLint |
 | `npx prisma studio` | Inspektion af DB |
 
 ## Arkitektur (kort)
 
+- `src/lib/feeds/partner-ads-registry.ts` — liste over Partner Ads feedid/bannerid (tilføj flere her)
+- `src/lib/feeds/partner-ads-adapter.ts` — XML-fetch/parse → normaliserede produkter
 - `data/feeds/sample-dev.json` — DEV feed (`isDevelopmentData: true`)
-- `src/lib/feeds/` — adapter-interface + sample-adapter + upsert-import
-- `src/lib/finder.ts` — DB-kandidater → tekst/budget-ranking → OpenAI “hvorfor” (kun rigtige IDs)
+- `src/lib/feeds/` — adapter-interface + upsert-import (batch + stale cleanup + searchVector)
+- `src/lib/search.ts` — Postgres FTS (`tsvector`/`GIN`, `simple`-config) + danske stopord
+- `src/lib/finder.ts` — FTS-kandidater → tekst/budget-ranking → OpenAI “hvorfor” (kun rigtige IDs)
 - `src/app/api/find` — gavefinder API
 - `src/app/api/admin/import` — beskyttet re-import
+
+Import regenererer `Product.searchVector` (vægtet title/brand/category/tags/description) ved hvert upsert, så nye feeds er søgbare med det samme.
 
 ## Deploy (Vercel + one.com)
 
@@ -86,14 +121,14 @@ Dækker normalize, rank og Zod-schemas.
 2. Sæt env vars i Vercel: `DATABASE_URL`, `OPENAI_API_KEY`, `ADMIN_SECRET`, `NEXT_PUBLIC_SITE_URL`.
 3. Brug en hostet Postgres (Vercel Postgres, Neon, Supabase, …).
 4. Kør migrationer mod produktions-DB: `npx prisma migrate deploy`.
-5. Importer sample-feed (eller senere rigtigt affiliate-feed) via `npm run import:feed` med prod-`DATABASE_URL`, eller `POST /api/admin/import`.
+5. Importer Partner Ads-feeds via `npm run import:feed` med prod-`DATABASE_URL` (anbefalet for Booktok m.fl.), eller `POST /api/admin/import`.
 6. **one.com DNS (bruger):** peg domænet til Vercel — typisk A/CNAME iht. Vercels domain-instruktioner. SSL håndteres af Vercel.
 
 ## Hvad brugeren stadig skal levere
 
 - OpenAI API-nøgle
 - Postgres (`DATABASE_URL`)
-- Rigtigt affiliate-feed (senere; erstat sample-adapter)
+- Evt. flere Partner Ads-feeds (tilføjes i registry)
 - one.com DNS → Vercel, når appen er live
 
 ## Sider

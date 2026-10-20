@@ -24,6 +24,9 @@
 .DS_Store
 *.pem
 
+# Partner Ads XML disk cache (downloaded feeds — do not commit)
+/data/feeds/cache/
+
 # debug
 npm-debug.log*
 yarn-debug.log*

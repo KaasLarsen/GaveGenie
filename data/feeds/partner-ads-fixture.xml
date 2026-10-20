@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+<produkter>
+<produkt>
+<forhandler>Justcool.dk</forhandler>
+<kategorinavn>Isskøjter</kategorinavn>
+<brand>SFR</brand>
+<produktnavn>SFR Galaxy Kunstskøjte Sort</produktnavn>
+<produktid>sfr012bk-43</produktid>
+<ean>5016978345062</ean>
+<beskrivelse>Allround kunstskøjte fra SFR med god polstring.</beskrivelse>
+<nypris>439.00</nypris>
+<glpris>439.00</glpris>
+<fragtomk>49</fragtomk>
+<lagerantal>In stock</lagerantal>
+<leveringstid>1-2</leveringstid>
+<size>43</size>
+<color>Sort</color>
+<gender>Unisex</gender>
+<billedurl>https://justcool.dk/media/catalog/product/s/f/sfr012.jpg</billedurl>
+<vareurl>https://www.partner-ads.com/dk/klikbanner.php?bannerid=92392&amp;partnerid=57802&amp;htmlurl=https://justcool.dk/sfr-galaxy</vareurl>
+</produkt>
+<produkt>
+<forhandler>Designplakater.dk</forhandler>
+<kategorinavn>Plakater</kategorinavn>
+<brand>Designplakater</brand>
+<produktnavn>Abstrakt plakat blå</produktnavn>
+<produktid>poster-blue-01</produktid>
+<ean></ean>
+<beskrivelse>En stilren plakat til stuen.</beskrivelse>
+<nypris>199,50</nypris>
+<glpris>249.00</glpris>
+<fragtomk>39</fragtomk>
+<lagerantal>0</lagerantal>
+<leveringstid>2-4</leveringstid>
+<size></size>
+<color>Blå</color>
+<gender></gender>
+<billedurl>https://designplakater.dk/img/blue.jpg</billedurl>
+<vareurl>https://www.partner-ads.com/dk/klikbanner.php?bannerid=109615&amp;partnerid=57802&amp;htmlurl=https://designplakater.dk/abstrakt-blaa</vareurl>
+</produkt>
+<produkt>
+<forhandler>Klodshelten</forhandler>
+<kategorinavn>Legetøj</kategorinavn>
+<brand></brand>
+<produktnavn></produktnavn>
+<produktid>skip-me</produktid>
+<beskrivelse>Mangler titel — skal skippes</beskrivelse>
+<nypris>50.00</nypris>
+<lagerantal>In stock</lagerantal>
+<billedurl></billedurl>
+<vareurl>https://www.partner-ads.com/dk/klikbanner.php?bannerid=1&amp;partnerid=57802&amp;htmlurl=https://example.com/x</vareurl>
+</produkt>
+</produkter>

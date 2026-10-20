@@ -17,6 +17,7 @@
   },
   "dependencies": {
     "@prisma/client": "^6.19.0",
+    "fast-xml-parser": "^5.11.2",
     "next": "15.5.28",
     "openai": "^7.39.0",
     "react": "19.1.0",
