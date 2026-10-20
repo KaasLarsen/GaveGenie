@@ -24,11 +24,15 @@ export default function AffiliatePage() {
       </p>
       <p>
         Når rigtige affiliate-feeds tilkobles, vil rettigheder, tracking og
-        disclosure følge partnernes vilkår. Indtil da er alle sample-URL&apos;er
-        peget mod <code>example.com</code>.
+        disclosure følge partnernes vilkår. Indtil da kan sample-URL&apos;er
+        pege mod placeholder-domæner.
       </p>
       <p>
-        <Link href="/finder">Tilbage til gavefinderen</Link>
+        Se også <Link href="/om-os">om os</Link> og{" "}
+        <Link href="/vilkaar">vilkår</Link>.
+      </p>
+      <p>
+        <Link href="/#gave-soegning">Tilbage til forsiden</Link>
       </p>
     </section>
   );

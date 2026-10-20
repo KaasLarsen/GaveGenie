@@ -13,6 +13,7 @@ type FindResponse = {
   error?: string;
 };
 
+/** Standalone panel form (e.g. /finder redirect fallback). Homepage uses HomeGiftExperience. */
 export function GiftFinderForm() {
   const [query, setQuery] = useState("");
   const [recipient, setRecipient] = useState("");
@@ -144,7 +145,9 @@ export function GiftFinderForm() {
       {meta && results.length > 0 && (
         <div className="finder-meta">
           {meta.disclosure && <p>{meta.disclosure}</p>}
-          {meta.sampleNotice && <p className="finder-meta__sample">{meta.sampleNotice}</p>}
+          {meta.sampleNotice && (
+            <p className="finder-meta__sample">{meta.sampleNotice}</p>
+          )}
           <p className="finder-meta__ai">
             {meta.usedAi
               ? "Begrundelser er skrevet med AI ud fra kataloget."
