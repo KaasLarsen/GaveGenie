@@ -22,6 +22,13 @@ export type RankableProduct = {
   retailerName: string;
 };
 
+export type RankOptions = {
+  /** Extra catalog queries from the AI/heuristic planner (boost matches). */
+  plannedQueries?: string[];
+  /** Terms that should not appear in good gifts (e.g. herre for a mom). */
+  avoidTerms?: string[];
+};
+
 /** Soft cap per shop in the final result list (diversity). */
 export const MAX_PER_RETAILER = 2;
 
@@ -157,12 +164,48 @@ export function diversifyByRetailer<T extends { retailerName: string }>(
   return selected;
 }
 
+function avoidPenalty(product: RankableProduct, avoidTerms: string[]): number {
+  if (avoidTerms.length === 0) return 0;
+  const hay = normalizeText(productFocusBlob(product));
+  let hits = 0;
+  for (const term of avoidTerms) {
+    const t = normalizeText(term);
+    if (t.length > 1 && hay.includes(t)) hits += 1;
+  }
+  return hits > 0 ? Math.min(0.7, 0.35 * hits) : 0;
+}
+
+function plannedQueryBoost(
+  product: RankableProduct,
+  plannedQueries: string[],
+): number {
+  if (plannedQueries.length === 0) return 0;
+  const focus = normalizeText(productFocusBlob(product));
+  let best = 0;
+  for (const q of plannedQueries) {
+    const tokens = tokenizeForSearch(q);
+    if (tokens.length === 0) continue;
+    const overlap = tokenOverlapScore(tokens, focus);
+    best = Math.max(best, overlap);
+  }
+  return best * 0.35;
+}
+
 function scoreProduct(
   product: RankableProduct,
   preferences: GiftPreferences,
   intent: GiftIntent,
+  options: RankOptions,
 ): RankedCandidate {
   const blob = buildsSearchBlob(product);
+  const plannedTokens = (options.plannedQueries ?? []).flatMap((q) =>
+    tokenizeForSearch(q),
+  );
+  const interestTokens =
+    intent.interestTokens.length > 0
+      ? intent.interestTokens
+      : [...new Set(plannedTokens)];
+
   const queryTokens =
     intent.allTokens.length > 0
       ? intent.allTokens
@@ -172,7 +215,7 @@ function scoreProduct(
             .join(" "),
         );
 
-  const interestScore = interestMatchScore(intent.interestTokens, product);
+  const interestScore = interestMatchScore(interestTokens, product);
   const textScore = tokenOverlapScore(queryTokens, blob);
   const titleBoost = tokenOverlapScore(queryTokens, product.title) * 0.25;
   const tagBoost =
@@ -188,16 +231,20 @@ function scoreProduct(
     `${product.title} ${product.category ?? ""} ${product.tags.join(" ")}`,
     intent.recipientGender,
   );
+  const avoided = avoidPenalty(product, options.avoidTerms ?? []);
+  const planBoost = plannedQueryBoost(product, options.plannedQueries ?? []);
 
   // Interest match dominates — without it, score stays low and gets filtered
   const score =
-    interestScore * 0.5 +
-    textScore * 0.2 +
+    interestScore * 0.45 +
+    textScore * 0.15 +
     titleBoost +
     tagBoost +
+    planBoost +
     budget * 0.15 +
     stockBoost -
-    genderPenalty;
+    genderPenalty -
+    avoided;
 
   return { ...product, score };
 }
@@ -210,25 +257,41 @@ export function rankProducts(
   products: RankableProduct[],
   preferences: GiftPreferences,
   limit = 8,
+  options: RankOptions = {},
 ): RankedCandidate[] {
   const intent = analyzeGiftIntent(preferences);
+  const plannedTokens = [
+    ...new Set(
+      (options.plannedQueries ?? []).flatMap((q) => tokenizeForSearch(q)),
+    ),
+  ];
+  const interestTokens =
+    intent.interestTokens.length > 0
+      ? intent.interestTokens
+      : plannedTokens;
 
   let pool = products;
-  // When the user named a clear interest (vin, padel…), drop products with zero hit
-  if (intent.interestTokens.length > 0) {
+  // When we have clear interest / planned catalog terms, drop zero-hit products
+  if (interestTokens.length > 0) {
     const withInterest = products.filter(
-      (p) => interestMatchScore(intent.interestTokens, p) > 0,
+      (p) => interestMatchScore(interestTokens, p) > 0,
     );
-    // Only apply hard filter when it still leaves a usable pool
-    if (withInterest.length >= Math.min(3, products.length)) {
-      pool = withInterest;
-    } else if (withInterest.length > 0) {
+    if (withInterest.length > 0) {
       pool = withInterest;
     }
   }
 
+  // Hard-drop strong avoid hits when alternatives exist
+  const avoid = options.avoidTerms ?? [];
+  if (avoid.length > 0) {
+    const cleaned = pool.filter((p) => avoidPenalty(p, avoid) < 0.35);
+    if (cleaned.length >= Math.min(3, pool.length) || cleaned.length > 0) {
+      pool = cleaned.length > 0 ? cleaned : pool;
+    }
+  }
+
   const scored = pool.map((product) =>
-    scoreProduct(product, preferences, intent),
+    scoreProduct(product, preferences, intent, options),
   );
 
   const sorted = scored.sort(

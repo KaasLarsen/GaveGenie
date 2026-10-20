@@ -25,6 +25,18 @@ export const openaiWhyResponseSchema = z.object({
   recommendations: z.array(openaiWhyItemSchema).max(8),
 });
 
+/** OpenAI gift search planner — queries only, never product IDs. */
+export const giftSearchPlanSchema = z.object({
+  searchQueries: z
+    .array(z.string().trim().min(1).max(80))
+    .min(1)
+    .max(4),
+  avoidTerms: z.array(z.string().trim().min(1).max(40)).max(12).default([]),
+  budgetMaxDkk: z.number().nonnegative().nullable().optional(),
+});
+
+export type GiftSearchPlan = z.infer<typeof giftSearchPlanSchema>;
+
 export const sampleFeedItemSchema = z.object({
   externalId: z.string().min(1),
   title: z.string().min(1),

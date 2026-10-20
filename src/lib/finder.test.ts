@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   buildCandidateWhere,
+  mergeProductsByQueryOrder,
   preferenceSearchTokens,
   toPreferences,
 } from "./finder";
@@ -108,5 +109,32 @@ describe("MIN_RELEVANCE_SCORE", () => {
   it("is above pure budget-only scores", () => {
     // budget=1 → 0.25; budget=0.5 → 0.125 — threshold requires some text match
     expect(MIN_RELEVANCE_SCORE).toBeGreaterThan(0.25);
+  });
+});
+
+describe("mergeProductsByQueryOrder", () => {
+  it("dedupes while keeping earlier query priority", () => {
+    const a = {
+      id: "1",
+      title: "A",
+      description: null,
+      brand: null,
+      category: null,
+      tags: [] as string[],
+      priceOre: 100,
+      currency: "DKK",
+      imageUrl: null,
+      productUrl: "https://example.com/a",
+      inStock: true,
+      isSample: false,
+      retailer: { name: "X" },
+    };
+    const b = { ...a, id: "2", title: "B" };
+    const merged = mergeProductsByQueryOrder([
+      [a, b],
+      [{ ...a, title: "A-dup" }, { ...b, id: "3", title: "C" }],
+    ]);
+    expect(merged.map((p) => p.id)).toEqual(["1", "2", "3"]);
+    expect(merged[0]?.title).toBe("A");
   });
 });

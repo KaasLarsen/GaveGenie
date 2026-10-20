@@ -110,7 +110,8 @@ Dækker normalize, rank, Zod-schemas, Partner Ads-mapping, FTS-helpers og finder
 - `data/feeds/sample-dev.json` — DEV feed (`isDevelopmentData: true`)
 - `src/lib/feeds/` — adapter-interface + upsert-import (batch + stale cleanup + searchVector)
 - `src/lib/search.ts` — Postgres FTS (`tsvector`/`GIN`, `simple`-config) + danske stopord
-- `src/lib/finder.ts` — FTS-kandidater → tekst/budget-ranking → OpenAI “hvorfor” (kun rigtige IDs)
+- `src/lib/ai/query-planner.ts` — OpenAI (eller heuristik) omsætter gavebeskrivelse til katalog-søgestrenge (vinbot-mønster)
+- `src/lib/finder.ts` — query-plan → FTS → tekst/budget-ranking → OpenAI “hvorfor” (kun rigtige IDs)
 - `src/app/api/find` — gavefinder API
 - `src/app/api/admin/import` — beskyttet re-import
 - `src/app/api/cron/import-feeds` — Vercel Cron: én Partner Ads-feed pr. kørsel

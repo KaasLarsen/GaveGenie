@@ -43,6 +43,7 @@ export async function POST(request: Request) {
       recommendations: result.recommendations,
       usedAi: result.usedAi,
       candidateCount: result.candidateCount,
+      searchQueries: result.searchQueries,
       sampleNotice:
         "Produkter markeret som eksempel er udviklingsdata — ikke live lager.",
     });
