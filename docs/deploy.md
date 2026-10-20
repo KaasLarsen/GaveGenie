@@ -9,14 +9,25 @@
    - `ADMIN_SECRET`
    - `NEXT_PUBLIC_SITE_URL` — production URL (fx `https://gavegenie.dk`)
 3. Build command: `prisma generate && next build` (allerede i `npm run build`).
-4. Efter første deploy: kør migrationer mod prod-DB:
+4. Efter første deploy: kør migrationer og Partner Ads-import mod prod-DB:
 
 ```bash
 DATABASE_URL="postgresql://…" npx prisma migrate deploy
 DATABASE_URL="postgresql://…" npm run import:feed
 ```
 
-Eller kald `POST /api/admin/import` med `Authorization: Bearer $ADMIN_SECRET`.
+`npm run import:feed` synkroniserer alle feeds i `src/lib/feeds/partner-ads-registry.ts`. Booktok er stort (~99k produkter) — kør importen via CLI (ikke kun serverless admin), så den ikke timeouts.
+
+Alternativt admin-API (mindre feeds / enkelt shop):
+
+```bash
+curl -X POST "https://YOUR_DOMAIN/api/admin/import" \
+  -H "Authorization: Bearer $ADMIN_SECRET" \
+  -H "Content-Type: application/json" \
+  -d '{"provider":"partner-ads-2437"}'
+```
+
+Til lokal/dev sample: `IMPORT_SAMPLE=1 npm run import:feed` eller `{"provider":"sample-dev"}`.
 
 ## one.com DNS
 

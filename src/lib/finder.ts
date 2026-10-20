@@ -1,9 +1,17 @@
+import type { Prisma } from "@prisma/client";
 import { prisma } from "./db";
 import { generateDanishWhys, isOpenAiConfigured } from "./ai/openai";
-import { dkkToOre } from "./normalize";
+import { dkkToOre, tokenize } from "./normalize";
 import { filterByBudget, rankProducts } from "./rank";
 import type { GiftPreferencesInput } from "./schema";
 import type { GiftPreferences, GiftRecommendation } from "./types";
+
+/** Max products pulled from DB before in-memory ranking. */
+const CANDIDATE_LIMIT = 800;
+
+/** Soft budget padding (same spirit as filterByBudget). */
+const BUDGET_SOFT_MIN = 0.7;
+const BUDGET_SOFT_MAX = 1.3;
 
 export function toPreferences(input: GiftPreferencesInput): GiftPreferences {
   return {
@@ -22,6 +30,77 @@ export function toPreferences(input: GiftPreferencesInput): GiftPreferences {
   };
 }
 
+/** Build searchable query tokens from gift preferences. */
+export function preferenceSearchTokens(preferences: GiftPreferences): string[] {
+  const blob = [
+    preferences.query,
+    preferences.recipient,
+    preferences.occasion,
+    preferences.style,
+  ]
+    .filter(Boolean)
+    .join(" ");
+  const tokens = tokenize(blob);
+  // Prefer longer tokens; cap to keep OR clauses manageable
+  return [...new Set(tokens)]
+    .sort((a, b) => b.length - a.length)
+    .slice(0, 12);
+}
+
+/**
+ * Prisma where for token prefilter + optional sample exclusion + soft budget.
+ * Exported for unit tests.
+ */
+export function buildCandidateWhere(
+  preferences: GiftPreferences,
+  opts: { excludeSamples: boolean; tokens: string[] },
+): Prisma.ProductWhereInput {
+  const and: Prisma.ProductWhereInput[] = [];
+
+  if (opts.excludeSamples) {
+    and.push({ isSample: false });
+  }
+
+  if (opts.tokens.length > 0) {
+    and.push({
+      OR: opts.tokens.flatMap((token) => [
+        { title: { contains: token, mode: "insensitive" as const } },
+        { description: { contains: token, mode: "insensitive" as const } },
+        { brand: { contains: token, mode: "insensitive" as const } },
+        { category: { contains: token, mode: "insensitive" as const } },
+      ]),
+    });
+  }
+
+  if (preferences.budgetMinOre !== undefined) {
+    and.push({
+      OR: [
+        { priceOre: null },
+        {
+          priceOre: {
+            gte: Math.floor(preferences.budgetMinOre * BUDGET_SOFT_MIN),
+          },
+        },
+      ],
+    });
+  }
+
+  if (preferences.budgetMaxOre !== undefined) {
+    and.push({
+      OR: [
+        { priceOre: null },
+        {
+          priceOre: {
+            lte: Math.ceil(preferences.budgetMaxOre * BUDGET_SOFT_MAX),
+          },
+        },
+      ],
+    });
+  }
+
+  return and.length > 0 ? { AND: and } : {};
+}
+
 /**
  * Retrieve candidates from DB, rank by text+budget, optionally enrich with OpenAI whys.
  * Never invents products — all IDs must exist in the database.
@@ -35,11 +114,31 @@ export async function findGifts(
 }> {
   const preferences = toPreferences(input);
 
-  const products = await prisma.product.findMany({
+  const liveCount = await prisma.product.count({
+    where: { isSample: false },
+  });
+  const excludeSamples = liveCount > 0;
+  const tokens = preferenceSearchTokens(preferences);
+
+  let products = await prisma.product.findMany({
+    where: buildCandidateWhere(preferences, { excludeSamples, tokens }),
     include: { retailer: true },
-    take: 200,
+    take: CANDIDATE_LIMIT,
     orderBy: { updatedAt: "desc" },
   });
+
+  // Fallback: if token filter was too strict, broaden (still exclude samples when live)
+  if (products.length === 0 && tokens.length > 0) {
+    products = await prisma.product.findMany({
+      where: buildCandidateWhere(preferences, {
+        excludeSamples,
+        tokens: [],
+      }),
+      include: { retailer: true },
+      take: CANDIDATE_LIMIT,
+      orderBy: { updatedAt: "desc" },
+    });
+  }
 
   const rankable = products.map((p) => ({
     id: p.id,
