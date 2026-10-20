@@ -1,19 +1,20 @@
 import type { Metadata } from "next";
-import { Fraunces, Source_Sans_3 } from "next/font/google";
+import { Figtree, Instrument_Serif } from "next/font/google";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
 import "./globals.css";
 
-const display = Fraunces({
+const display = Instrument_Serif({
   variable: "--font-display",
   subsets: ["latin"],
-  weight: ["500", "600", "700"],
+  weight: ["400"],
+  style: ["normal", "italic"],
 });
 
-const body = Source_Sans_3({
+const body = Figtree({
   variable: "--font-body",
   subsets: ["latin"],
-  weight: ["400", "600", "700"],
+  weight: ["400", "500", "600", "700"],
 });
 
 const siteUrl =
@@ -54,7 +55,7 @@ export default function RootLayout({
       <body className={`${display.variable} ${body.variable} antialiased`}>
         <div className="site-shell">
           <SiteHeader />
-          <main>{children}</main>
+          <main id="main">{children}</main>
           <SiteFooter />
         </div>
       </body>
