@@ -123,7 +123,7 @@ export async function findGifts(
     preferences.budgetMaxOre,
   );
 
-  const ranked = rankProducts(filtered, preferences, 6).filter(
+  const ranked = rankProducts(filtered, preferences, 8).filter(
     (c) => c.score >= MIN_RELEVANCE_SCORE,
   );
 

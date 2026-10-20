@@ -20,30 +20,40 @@ describe("preferenceSearchTokens", () => {
       }),
     );
     // å strips via NFKD; æ/ø stay as letters under simple normalize
+    // Interest/occasion drive FTS — recipient "far" is used in ranking, not retrieval
     expect(tokens).toContain("skøjter");
     expect(tokens).toContain("voksen");
     expect(tokens).toContain("fødselsdag");
-    expect(tokens).toContain("far");
+    expect(tokens).not.toContain("far");
   });
 
-  it("drops Danish stopwords and the word gave", () => {
+  it("uses interest tokens for FTS (not recipient filler)", () => {
     const tokens = preferenceSearchTokens(
       toPreferences({
         query: "gave til far der elsker kaffe",
       }),
     );
     expect(tokens).toContain("kaffe");
-    expect(tokens).toContain("elsker");
-    expect(tokens).toContain("far");
-    expect(tokens).not.toContain("til");
-    expect(tokens).not.toContain("der");
+    expect(tokens).not.toContain("elsker");
+    expect(tokens).not.toContain("far");
     expect(tokens).not.toContain("gave");
+  });
+
+  it("retrieves on vin for a mom who loves wine", () => {
+    const tokens = preferenceSearchTokens(
+      toPreferences({ query: "søde mor på 65 som elsker vin" }),
+    );
+    expect(tokens).toEqual(["vin"]);
   });
 });
 
 describe("buildTsQueryString", () => {
-  it("builds OR prefix query from tokens", () => {
+  it("uses prefix only for longer tokens", () => {
     expect(buildTsQueryString(["kaffe", "krus"])).toBe("kaffe:* | krus:*");
+  });
+
+  it("keeps short tokens exact so vin does not match vinter", () => {
+    expect(buildTsQueryString(["vin"])).toBe("vin");
   });
 
   it("returns null for empty or unsafe tokens", () => {
