@@ -8,7 +8,6 @@ import type { GiftRecommendation } from "@/lib/types";
 type FindResponse = {
   recommendations?: GiftRecommendation[];
   usedAi?: boolean;
-  disclosure?: string;
   sampleNotice?: string;
   error?: string;
 };
@@ -25,7 +24,6 @@ export function HomeGiftExperience() {
   const [results, setResults] = useState<GiftRecommendation[]>([]);
   const [meta, setMeta] = useState<{
     usedAi?: boolean;
-    disclosure?: string;
     sampleNotice?: string;
   } | null>(null);
   const [hasSearched, setHasSearched] = useState(false);
@@ -71,7 +69,6 @@ export function HomeGiftExperience() {
         setResults(data.recommendations ?? []);
         setMeta({
           usedAi: data.usedAi,
-          disclosure: data.disclosure,
           sampleNotice: data.sampleNotice,
         });
       });
@@ -217,7 +214,6 @@ export function HomeGiftExperience() {
 
             {meta && results.length > 0 && (
               <div className="finder-meta">
-                {meta.disclosure && <p>{meta.disclosure}</p>}
                 {meta.sampleNotice && (
                   <p className="finder-meta__sample">{meta.sampleNotice}</p>
                 )}

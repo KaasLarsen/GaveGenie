@@ -7,7 +7,7 @@ export function SiteFooter() {
       <div className="site-footer__inner">
         <BrandWordmark as="p" className="site-footer__brand" />
         <p className="site-footer__note">
-          Gaveforslag matchet med AI — med tydelig affiliate-oplysning.
+          Gaveforslag matchet med AI.
         </p>
         <nav className="site-footer__links" aria-label="Sidefod">
           <Link href="/om-os">Om os</Link>

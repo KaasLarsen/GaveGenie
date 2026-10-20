@@ -43,8 +43,6 @@ export async function POST(request: Request) {
       recommendations: result.recommendations,
       usedAi: result.usedAi,
       candidateCount: result.candidateCount,
-      disclosure:
-        "Nogle links kan være affiliate-links. GaveGenie kan modtage kommission uden ekstra omkostning for dig.",
       sampleNotice:
         "Produkter markeret som eksempel er udviklingsdata — ikke live lager.",
     });
