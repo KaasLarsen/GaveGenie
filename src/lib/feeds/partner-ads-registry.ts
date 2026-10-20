@@ -27,6 +27,11 @@ export const PARTNER_ADS_FEEDS: readonly PartnerAdsFeedConfig[] = [
   { feedId: "4444", bannerId: "118048", label: "Retrotrøjer.dk" },
   { feedId: "2767", bannerId: "98464", label: "Skisport.dk" },
   { feedId: "1883", bannerId: "79758", label: "Tennisshoppen.dk" },
+  { feedId: "565", bannerId: "44269", label: "Outmore.dk" },
+  { feedId: "3278", bannerId: "105970", label: "EauDeParfum.dk" },
+  { feedId: "4090", bannerId: "114827", label: "IdHAIR" },
+  { feedId: "522", bannerId: "42807", label: "Med24" },
+  { feedId: "4347", bannerId: "117147", label: "Barnetsrum" },
 ] as const;
 
 export function partnerAdsProviderKey(feedId: string): string {
