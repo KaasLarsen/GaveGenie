@@ -6,8 +6,7 @@ export function SiteFooter() {
       <div className="site-footer__inner">
         <p className="site-footer__brand">GaveGenie</p>
         <p className="site-footer__note">
-          Gaveforslag fra rigtige produktfeeds — med AI-matching og tydelig
-          affiliate-oplysning.
+          Gaveforslag matchet med AI — med tydelig affiliate-oplysning.
         </p>
         <nav className="site-footer__links" aria-label="Sidefod">
           <Link href="/om-os">Om os</Link>
