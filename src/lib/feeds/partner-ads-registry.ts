@@ -19,6 +19,10 @@ export const PARTNER_ADS_FEEDS: readonly PartnerAdsFeedConfig[] = [
   { feedId: "1318", bannerId: "65841", label: "Backpackerlife.dk" },
   { feedId: "4330", bannerId: "117056", label: "Booktok" },
   { feedId: "3590", bannerId: "109615", label: "Designplakater.dk" },
+  { feedId: "3833", bannerId: "112426", label: "Travelbetter.dk" },
+  { feedId: "637", bannerId: "46187", label: "Apuls.dk" },
+  { feedId: "13", bannerId: "16532", label: "Billigsport24" },
+  { feedId: "819", bannerId: "51440", label: "MM Sport" },
 ] as const;
 
 export function partnerAdsProviderKey(feedId: string): string {
