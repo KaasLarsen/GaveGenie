@@ -150,7 +150,7 @@ export function GiftFinderForm() {
           )}
           <p className="finder-meta__ai">
             {meta.usedAi
-              ? "Begrundelser er skrevet med AI ud fra kataloget."
+              ? "Begrundelser er skrevet med AI ud fra dine ønsker — ikke katalogtekst."
               : "Begrundelser er genereret uden AI (manglende nøgle eller fejl)."}
           </p>
         </div>
