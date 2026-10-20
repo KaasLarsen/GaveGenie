@@ -1,4 +1,5 @@
 import { prisma } from "../db";
+import { refreshProductSearchVectors } from "../search";
 import type { NormalizedProduct } from "../types";
 import type { FeedAdapter } from "./types";
 
@@ -90,6 +91,9 @@ async function upsertProductBatch(products: NormalizedProduct[]): Promise<void> 
       });
     }),
   );
+
+  // Weighted tsvector (accent-normalized) — Prisma cannot write Unsupported("tsvector")
+  await refreshProductSearchVectors(products);
 }
 
 /**

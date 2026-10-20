@@ -43,6 +43,64 @@ export function tokenize(value: string): string[] {
   return normalized.split(" ").filter((t) => t.length > 1);
 }
 
+/** Common Danish / gift-query noise tokens dropped before FTS and ranking. */
+export const DANISH_SEARCH_STOPWORDS = new Set([
+  "til",
+  "der",
+  "den",
+  "det",
+  "de",
+  "en",
+  "et",
+  "og",
+  "eller",
+  "som",
+  "pa",
+  "af",
+  "for",
+  "med",
+  "er",
+  "har",
+  "jeg",
+  "du",
+  "vi",
+  "i",
+  "om",
+  "fra",
+  "din",
+  "dit",
+  "dine",
+  "min",
+  "mit",
+  "mine",
+  "gave",
+  "gaven",
+  "gaver",
+  "lidt",
+  "noget",
+  "meget",
+  "ogsa",
+  "kan",
+  "skal",
+  "vil",
+  "mere",
+  "bare",
+  "han",
+  "hun",
+  "ham",
+  "hende",
+  "man",
+  "sig",
+  "sin",
+  "sit",
+  "sine",
+]);
+
+/** Tokenize for gift search: normalize + drop Danish stopwords. */
+export function tokenizeForSearch(value: string): string[] {
+  return tokenize(value).filter((t) => !DANISH_SEARCH_STOPWORDS.has(t));
+}
+
 /** Ensure required fields and sane defaults on a normalized product. */
 export function assertNormalizedProduct(
   product: NormalizedProduct,

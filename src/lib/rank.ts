@@ -1,4 +1,4 @@
-import { normalizeText, tokenize } from "./normalize";
+import { normalizeText, tokenizeForSearch } from "./normalize";
 import type { GiftPreferences, RankedCandidate } from "./types";
 
 export type RankableProduct = {
@@ -74,7 +74,7 @@ export function rankProducts(
     .filter(Boolean)
     .join(" ");
 
-  const queryTokens = tokenize(queryParts);
+  const queryTokens = tokenizeForSearch(queryParts);
 
   const scored = products.map((product) => {
     const blob = buildsSearchBlob(product);

@@ -89,7 +89,7 @@ npm run dev
 npm test
 ```
 
-Dækker normalize, rank, Zod-schemas, Partner Ads-mapping og finder-prefilter.
+Dækker normalize, rank, Zod-schemas, Partner Ads-mapping, FTS-helpers og finder.
 
 ## Scripts
 
@@ -107,10 +107,13 @@ Dækker normalize, rank, Zod-schemas, Partner Ads-mapping og finder-prefilter.
 - `src/lib/feeds/partner-ads-registry.ts` — liste over Partner Ads feedid/bannerid (tilføj flere her)
 - `src/lib/feeds/partner-ads-adapter.ts` — XML-fetch/parse → normaliserede produkter
 - `data/feeds/sample-dev.json` — DEV feed (`isDevelopmentData: true`)
-- `src/lib/feeds/` — adapter-interface + upsert-import (batch + stale cleanup)
-- `src/lib/finder.ts` — token-prefilter → tekst/budget-ranking → OpenAI “hvorfor” (kun rigtige IDs)
+- `src/lib/feeds/` — adapter-interface + upsert-import (batch + stale cleanup + searchVector)
+- `src/lib/search.ts` — Postgres FTS (`tsvector`/`GIN`, `simple`-config) + danske stopord
+- `src/lib/finder.ts` — FTS-kandidater → tekst/budget-ranking → OpenAI “hvorfor” (kun rigtige IDs)
 - `src/app/api/find` — gavefinder API
 - `src/app/api/admin/import` — beskyttet re-import
+
+Import regenererer `Product.searchVector` (vægtet title/brand/category/tags/description) ved hvert upsert, så nye feeds er søgbare med det samme.
 
 ## Deploy (Vercel + one.com)
 

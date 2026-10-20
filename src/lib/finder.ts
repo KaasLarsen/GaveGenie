@@ -1,17 +1,21 @@
-import type { Prisma } from "@prisma/client";
 import { prisma } from "./db";
 import { generateDanishWhys, isOpenAiConfigured } from "./ai/openai";
-import { dkkToOre, tokenize } from "./normalize";
+import { dkkToOre } from "./normalize";
 import { filterByBudget, rankProducts } from "./rank";
 import type { GiftPreferencesInput } from "./schema";
+import {
+  buildBudgetWhere,
+  buildTsQueryString,
+  CANDIDATE_LIMIT,
+  findProductIdsByFts,
+  MIN_RELEVANCE_SCORE,
+  preferenceSearchTokens,
+} from "./search";
 import type { GiftPreferences, GiftRecommendation } from "./types";
 
-/** Max products pulled from DB before in-memory ranking. */
-const CANDIDATE_LIMIT = 800;
-
-/** Soft budget padding (same spirit as filterByBudget). */
-const BUDGET_SOFT_MIN = 0.7;
-const BUDGET_SOFT_MAX = 1.3;
+export { preferenceSearchTokens } from "./search";
+/** @deprecated Use buildBudgetWhere — kept for callers/tests during transition */
+export { buildBudgetWhere as buildCandidateWhere } from "./search";
 
 export function toPreferences(input: GiftPreferencesInput): GiftPreferences {
   return {
@@ -30,79 +34,8 @@ export function toPreferences(input: GiftPreferencesInput): GiftPreferences {
   };
 }
 
-/** Build searchable query tokens from gift preferences. */
-export function preferenceSearchTokens(preferences: GiftPreferences): string[] {
-  const blob = [
-    preferences.query,
-    preferences.recipient,
-    preferences.occasion,
-    preferences.style,
-  ]
-    .filter(Boolean)
-    .join(" ");
-  const tokens = tokenize(blob);
-  // Prefer longer tokens; cap to keep OR clauses manageable
-  return [...new Set(tokens)]
-    .sort((a, b) => b.length - a.length)
-    .slice(0, 12);
-}
-
 /**
- * Prisma where for token prefilter + optional sample exclusion + soft budget.
- * Exported for unit tests.
- */
-export function buildCandidateWhere(
-  preferences: GiftPreferences,
-  opts: { excludeSamples: boolean; tokens: string[] },
-): Prisma.ProductWhereInput {
-  const and: Prisma.ProductWhereInput[] = [];
-
-  if (opts.excludeSamples) {
-    and.push({ isSample: false });
-  }
-
-  if (opts.tokens.length > 0) {
-    and.push({
-      OR: opts.tokens.flatMap((token) => [
-        { title: { contains: token, mode: "insensitive" as const } },
-        { description: { contains: token, mode: "insensitive" as const } },
-        { brand: { contains: token, mode: "insensitive" as const } },
-        { category: { contains: token, mode: "insensitive" as const } },
-      ]),
-    });
-  }
-
-  if (preferences.budgetMinOre !== undefined) {
-    and.push({
-      OR: [
-        { priceOre: null },
-        {
-          priceOre: {
-            gte: Math.floor(preferences.budgetMinOre * BUDGET_SOFT_MIN),
-          },
-        },
-      ],
-    });
-  }
-
-  if (preferences.budgetMaxOre !== undefined) {
-    and.push({
-      OR: [
-        { priceOre: null },
-        {
-          priceOre: {
-            lte: Math.ceil(preferences.budgetMaxOre * BUDGET_SOFT_MAX),
-          },
-        },
-      ],
-    });
-  }
-
-  return and.length > 0 ? { AND: and } : {};
-}
-
-/**
- * Retrieve candidates from DB, rank by text+budget, optionally enrich with OpenAI whys.
+ * Retrieve candidates via Postgres FTS, rank by text+budget, optionally enrich with OpenAI whys.
  * Never invents products — all IDs must exist in the database.
  */
 export async function findGifts(
@@ -119,21 +52,49 @@ export async function findGifts(
   });
   const excludeSamples = liveCount > 0;
   const tokens = preferenceSearchTokens(preferences);
+  const tsQuery = buildTsQueryString(tokens);
 
-  let products = await prisma.product.findMany({
-    where: buildCandidateWhere(preferences, { excludeSamples, tokens }),
-    include: { retailer: true },
-    take: CANDIDATE_LIMIT,
-    orderBy: { updatedAt: "desc" },
-  });
+  let products: Array<{
+    id: string;
+    title: string;
+    description: string | null;
+    brand: string | null;
+    category: string | null;
+    tags: string[];
+    priceOre: number | null;
+    currency: string;
+    imageUrl: string | null;
+    productUrl: string;
+    inStock: boolean | null;
+    isSample: boolean;
+    retailer: { name: string };
+  }> = [];
 
-  // Fallback: if token filter was too strict, broaden (still exclude samples when live)
-  if (products.length === 0 && tokens.length > 0) {
+  if (tsQuery) {
+    const ids = await findProductIdsByFts({
+      tsQuery,
+      excludeSamples,
+      preferences,
+      limit: CANDIDATE_LIMIT,
+    });
+
+    if (ids.length > 0) {
+      const found = await prisma.product.findMany({
+        where: { id: { in: ids } },
+        include: { retailer: true },
+      });
+      const byId = new Map(found.map((p) => [p.id, p]));
+      // Preserve FTS rank order
+      products = ids
+        .map((id) => byId.get(id))
+        .filter((p): p is NonNullable<typeof p> => Boolean(p));
+    }
+  }
+
+  // Fallback: FTS too strict / no tokens — soft budget only (still prefer live catalog)
+  if (products.length === 0) {
     products = await prisma.product.findMany({
-      where: buildCandidateWhere(preferences, {
-        excludeSamples,
-        tokens: [],
-      }),
+      where: buildBudgetWhere(preferences, { excludeSamples }),
       include: { retailer: true },
       take: CANDIDATE_LIMIT,
       orderBy: { updatedAt: "desc" },
@@ -162,7 +123,9 @@ export async function findGifts(
     preferences.budgetMaxOre,
   );
 
-  const ranked = rankProducts(filtered, preferences, 6);
+  const ranked = rankProducts(filtered, preferences, 6).filter(
+    (c) => c.score >= MIN_RELEVANCE_SCORE,
+  );
 
   // Re-validate IDs against DB (defense in depth)
   const ids = ranked.map((r) => r.id);

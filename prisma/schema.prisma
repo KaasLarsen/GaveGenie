@@ -37,6 +37,9 @@ model Product {
   inStock     Boolean?
   /// True when this row comes from a development/sample feed
   isSample    Boolean   @default(false)
+  /// Weighted full-text document (title A, brand/category/tags B, description C).
+  /// Maintained on import via raw SQL — not set through Prisma create/update.
+  searchVector Unsupported("tsvector")?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 

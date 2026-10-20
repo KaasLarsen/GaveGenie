@@ -16,7 +16,7 @@ DATABASE_URL="postgresql://…" npx prisma migrate deploy
 DATABASE_URL="postgresql://…" npm run import:feed
 ```
 
-`npm run import:feed` synkroniserer feeds i `src/lib/feeds/partner-ads-registry.ts`. Feeds springes over hvis de er importeret inden for `FEED_CACHE_TTL_HOURS` (default 24h), så Partner Ads ikke rammes unødigt. Gavefinderen downloader aldrig feeds. Booktok/Med24 er store — kør fuld sync via CLI (ikke kun serverless admin). `FORCE_FEED_REFRESH=1` kun ved bevidst refresh.
+`npm run import:feed` synkroniserer feeds i `src/lib/feeds/partner-ads-registry.ts` og regenererer Postgres `searchVector` (FTS) på hvert produkt. Feeds springes over hvis de er importeret inden for `FEED_CACHE_TTL_HOURS` (default 24h), så Partner Ads ikke rammes unødigt. Gavefinderen downloader aldrig feeds — den søger kun i Postgres via GIN/`tsvector`. Booktok/Med24 er store — kør fuld sync via CLI (ikke kun serverless admin). `FORCE_FEED_REFRESH=1` kun ved bevidst refresh.
 
 Alternativt admin-API (mindre feeds / enkelt shop):
 
