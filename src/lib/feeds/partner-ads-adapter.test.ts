@@ -63,7 +63,7 @@ describe("mapPartnerAdsProduct", () => {
     expect(product!.priceOre).toBe(43900);
     expect(product!.isSample).toBe(false);
     expect(product!.inStock).toBe(true);
-    expect(product!.tags).toEqual(["Sort", "Unisex", "43"]);
+    expect(product!.tags).toEqual(["Sort", "Unisex"]);
     expect(product!.productUrl).toContain("bannerid=92392&partnerid=57802");
     expect(product!.productUrl).not.toContain("&amp;");
   });

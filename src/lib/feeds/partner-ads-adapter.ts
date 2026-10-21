@@ -137,7 +137,8 @@ export function mapPartnerAdsProduct(
     priceDkk !== null && !Number.isNaN(priceDkk) ? dkkToOre(priceDkk) : null;
 
   const imageUrl = textField(raw.billedurl);
-  const tags = [raw.color, raw.gender, raw.size]
+  // Color + gender only — size values like "W"/"M"/"F" were mistaken for gender.
+  const tags = [raw.color, raw.gender]
     .map((t) => textField(t))
     .filter((t): t is string => Boolean(t));
 

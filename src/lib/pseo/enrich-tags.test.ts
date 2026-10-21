@@ -206,4 +206,83 @@ describe("enrichProductSeoTags", () => {
     expect(enriched.tags).toContain(interestSeoTag("laeseren"));
     expect(enriched.tags).not.toContain(recipientSeoTag("ham"));
   });
+
+  it("does not put børnerulleskøjter with USB/LED on til-hende/tech", () => {
+    const enriched = enrichProductSeoTags(
+      base({
+        title: "Børnerulleskøjter LED USB",
+        category: "Sport > Elektronik",
+        description: "Rulleskøjter med LED-hjul og USB-opladning",
+        tags: ["Female"],
+        priceOre: 449_00,
+      }),
+    );
+    expect(enriched.tags).toContain(recipientSeoTag("barn"));
+    expect(enriched.tags).not.toContain(recipientSeoTag("hende"));
+    expect(enriched.tags).not.toContain(recipientSeoTag("ham"));
+    expect(enriched.tags).not.toContain(interestSeoTag("tech"));
+  });
+
+  it("tags rulleskøjter til børn as barn, not adult recipients", () => {
+    const enriched = enrichProductSeoTags(
+      base({
+        title: "Rulleskøjter til børn",
+        category: "Sport",
+        priceOre: 299_00,
+      }),
+    );
+    expect(enriched.tags).toContain(recipientSeoTag("barn"));
+    expect(enriched.tags).not.toContain(recipientSeoTag("hende"));
+    expect(enriched.tags).not.toContain(recipientSeoTag("ham"));
+  });
+
+  it("still tags real tech gifts for hende", () => {
+    const enriched = enrichProductSeoTags(
+      base({
+        title: "Trådløse høretelefoner",
+        category: "Elektronik",
+        tags: ["female"],
+        priceOre: 599_00,
+      }),
+    );
+    expect(enriched.tags).toContain(recipientSeoTag("hende"));
+    expect(enriched.tags).toContain(interestSeoTag("tech"));
+    expect(enriched.tags).not.toContain(recipientSeoTag("barn"));
+  });
+
+  it("does not treat size letter W as female gender", () => {
+    const enriched = enrichProductSeoTags(
+      base({
+        title: "Neutral powerbank 10.000 mAh",
+        category: "Elektronik",
+        tags: ["W"],
+        priceOre: 199_00,
+      }),
+    );
+    expect(enriched.tags).not.toContain(recipientSeoTag("hende"));
+    expect(enriched.tags).not.toContain(recipientSeoTag("ham"));
+    expect(enriched.tags).toContain(interestSeoTag("tech"));
+  });
+
+  it("does not treat bare LED lys as bolig", () => {
+    const enriched = enrichProductSeoTags(
+      base({
+        title: "LED lys til cykel",
+        category: "Sport",
+        priceOre: 89_00,
+      }),
+    );
+    expect(enriched.tags).not.toContain(interestSeoTag("bolig"));
+  });
+
+  it("tags duftlys as bolig", () => {
+    const enriched = enrichProductSeoTags(
+      base({
+        title: "Soja duftlys vanilje",
+        category: "Bolig",
+        priceOre: 129_00,
+      }),
+    );
+    expect(enriched.tags).toContain(interestSeoTag("bolig"));
+  });
 });

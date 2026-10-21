@@ -86,12 +86,18 @@ const STRONG_FEMALE = [
   "ladieswear",
 ];
 
+/**
+ * Child gift signals. Includes Danish ø-forms (normalizeText does not fold ø)
+ * and sport/kids noise that often lacks an explicit "barn" word.
+ */
 const CHILD_SIGNAL = [
   "til born",
   "til barn",
   "til boern",
+  "til børn",
   "born",
   "boern",
+  "børn",
   "barn",
   "baby",
   "kids",
@@ -100,6 +106,19 @@ const CHILD_SIGNAL = [
   "junior",
   "legetoj",
   "legetoej",
+  "legetøj",
+  "legetøjs",
+  "børne",
+  "borne",
+  "boerne",
+  "rulleskøjte",
+  "rulleskøjter",
+  "rulleskøj",
+  "inline skate",
+  "inlineskate",
+  "rollerblade",
+  "løbehjul",
+  "loebhjul",
   "peppa",
   "disney",
   "bluey",
@@ -109,6 +128,9 @@ const CHILD_SIGNAL = [
   "skriv og visk",
 ];
 
+/** Compound prefixes: Børnerulleskøjter, børnesko, … */
+const CHILD_TOKEN_PREFIXES = ["børne", "borne", "boerne", "barne"];
+
 const FEED_GENDER_MALE = new Set([
   "male",
   "men",
@@ -116,7 +138,6 @@ const FEED_GENDER_MALE = new Set([
   "herre",
   "herrer",
   "mande",
-  "m",
 ]);
 const FEED_GENDER_FEMALE = new Set([
   "female",
@@ -125,8 +146,6 @@ const FEED_GENDER_FEMALE = new Set([
   "dame",
   "damer",
   "kvinde",
-  "f",
-  "w",
 ]);
 
 function hasStrongMale(blob: string, feedTags: string[]): boolean {
@@ -139,8 +158,18 @@ function hasStrongFemale(blob: string, feedTags: string[]): boolean {
   return feedTags.some((t) => FEED_GENDER_FEMALE.has(normalizeText(t)));
 }
 
+function hasChildTokenPrefix(blob: string): boolean {
+  if (!blob) return false;
+  const tokens = blob.split(" ");
+  return tokens.some((token) =>
+    CHILD_TOKEN_PREFIXES.some(
+      (prefix) => token.startsWith(prefix) && token.length > prefix.length,
+    ),
+  );
+}
+
 function hasChildSignal(blob: string): boolean {
-  return matchesKeywords(blob, CHILD_SIGNAL);
+  return matchesKeywords(blob, CHILD_SIGNAL) || hasChildTokenPrefix(blob);
 }
 
 /**
@@ -183,7 +212,6 @@ export function enrichProductSeoTags(
   const blob = buildSearchBlob(product);
   const baseTags = product.tags.filter((t) => !t.startsWith(SEO_TAG_PREFIX));
   const seoTags = new Set<string>();
-  const isChild = hasChildSignal(blob);
 
   for (const r of RECIPIENTS) {
     if (r.id === "ham" || r.id === "hende") continue;
@@ -191,6 +219,10 @@ export function enrichProductSeoTags(
       seoTags.add(recipientSeoTag(r.id));
     }
   }
+
+  // Child if signal/prefix OR taxonomy already set barn — then never gender-tag.
+  const isChild =
+    hasChildSignal(blob) || seoTags.has(recipientSeoTag("barn"));
 
   if (isChild) {
     seoTags.add(recipientSeoTag("barn"));
@@ -203,9 +235,10 @@ export function enrichProductSeoTags(
   if (female && !male) seoTags.add(recipientSeoTag("hende"));
 
   for (const i of INTERESTS) {
-    if (matchesKeywords(blob, i.match.keywords)) {
-      seoTags.add(interestSeoTag(i.id));
-    }
+    if (!matchesKeywords(blob, i.match.keywords)) continue;
+    const negatives = i.match.negativeKeywords;
+    if (negatives?.length && matchesKeywords(blob, negatives)) continue;
+    seoTags.add(interestSeoTag(i.id));
   }
 
   // Soft recipient from strong gendered-interest signals (not bare "duft").
@@ -229,9 +262,10 @@ export function enrichProductSeoTags(
   }
 
   for (const o of OCCASIONS) {
-    if (matchesKeywords(blob, o.match.keywords)) {
-      seoTags.add(occasionSeoTag(o.id));
-    }
+    if (!matchesKeywords(blob, o.match.keywords)) continue;
+    const negatives = o.match.negativeKeywords;
+    if (negatives?.length && matchesKeywords(blob, negatives)) continue;
+    seoTags.add(occasionSeoTag(o.id));
   }
 
   if (product.priceOre !== null && product.priceOre !== undefined) {

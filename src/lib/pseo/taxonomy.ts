@@ -3,6 +3,11 @@ import { seoTag } from "./constants";
 export type TaxonomyMatch = {
   /** Keywords matched against normalized title/description/category/tags blob. */
   keywords: string[];
+  /**
+   * If any negative matches, the interest/occasion is not applied even when
+   * positives hit (e.g. USB/LED copy on sports gear must not become tech).
+   */
+  negativeKeywords?: string[];
 };
 
 export type RecipientDef = {
@@ -223,17 +228,34 @@ export const INTERESTS: InterestDef[] = [
     label: "tech",
     headlineHint: "der er tech-nørd",
     match: {
+      // No bare "usb" — LED/charge copy on skates and toys flooded tech hubs.
       keywords: [
         "tech",
         "elektronik",
         "gadget",
-        "usb",
         "hovedtelefon",
         "høretelefon",
         "horetelefon",
         "smartphone",
         "smartwatch",
         "powerbank",
+      ],
+      negativeKeywords: [
+        "rulleskøjte",
+        "rulleskøjter",
+        "rulleskøj",
+        "skate",
+        "skates",
+        "rollerblade",
+        "løbehjul",
+        "loebhjul",
+        "inline skate",
+        "inlineskate",
+        "inliner",
+        "isskøjte",
+        "isskøjter",
+        "sko",
+        "jakke",
       ],
     },
   },
@@ -253,14 +275,17 @@ export const INTERESTS: InterestDef[] = [
     label: "boligentusiasten",
     headlineHint: "der elsker bolig",
     match: {
+      // No bare "lys" — LED lights on skates/toys matched bolig.
       keywords: [
         "bolig",
         "hjem",
         "keramik",
-        "lys",
+        "stearinlys",
+        "duftlys",
+        "lampe",
+        "belysning",
         "interior",
         "interiør",
-        "interior",
         "hygge",
         "dekor",
         "plante",
