@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { listIndexedLandings } from "@/lib/pseo/landings";
 import { resolveSlug } from "@/lib/pseo/slug";
+import { OCCASIONS, RECIPIENTS } from "@/lib/pseo/taxonomy";
 
 export const metadata: Metadata = {
   title: "Gaveidéer efter person og anledning",
@@ -10,6 +11,22 @@ export const metadata: Metadata = {
 };
 
 export const revalidate = 3600;
+
+const PRIMARY_HUBS = [
+  { href: "/gaver/til-ham", label: "Gaver til ham" },
+  { href: "/gaver/til-hende", label: "Gaver til hende" },
+  { href: "/gaver/jul", label: "Gaver til jul" },
+  ...RECIPIENTS.filter(
+    (r) => r.slug !== "til-ham" && r.slug !== "til-hende",
+  ).map((r) => ({
+    href: `/gaver/${r.slug}`,
+    label: `Gaver ${r.phrase}`,
+  })),
+  ...OCCASIONS.filter((o) => o.slug !== "jul").map((o) => ({
+    href: `/gaver/${o.slug}`,
+    label: `Gaver til ${o.label.toLowerCase()}`,
+  })),
+] as const;
 
 export default async function GaverHubPage() {
   let landings: Awaited<ReturnType<typeof listIndexedLandings>> = [];
@@ -43,10 +60,23 @@ export default async function GaverHubPage() {
         </p>
       </header>
 
+      <section className="seo-hub__group" aria-labelledby="seo-hub-primary">
+        <h2 id="seo-hub-primary">Populære guides</h2>
+        <ul className="seo-hub__list">
+          {PRIMARY_HUBS.map((hub) => (
+            <li key={hub.href}>
+              <Link href={hub.href}>{hub.label}</Link>
+            </li>
+          ))}
+        </ul>
+      </section>
+
       {landings.length === 0 ? (
         <p className="seo-hub__empty">
-          Ingen indexerede gaveguides endnu. Kør feed-import og{" "}
-          <code>npm run pseo:sync-landings</code> for at generere landings.
+          Flere indexerede guides dukker op, når kataloget er synkroniseret.
+          Brug{" "}
+          <Link href="/#gave-soegning">gavefinderen</Link> imens — eller åbn en
+          af guiderne ovenfor.
         </p>
       ) : (
         sections.map((section) => {

@@ -7,6 +7,7 @@ import { partnerAdsProviderKey } from "@/lib/feeds/partner-ads-registry";
 import { importPartnerAdsFeed } from "@/lib/feeds/partner-ads-import";
 import { shouldSkipPartnerAdsImport } from "@/lib/feeds/feed-refresh-policy";
 import { syncSeoLandings } from "@/lib/pseo/landings";
+import { retagProductsMissingSeoTags } from "@/lib/pseo/retag";
 
 export const runtime = "nodejs";
 /** Pack as many feeds as fit — large shops (Med24/Booktok) need headroom. */
@@ -54,16 +55,8 @@ async function handle(request: Request) {
 
   try {
     const due = await listFeedsDue();
-    if (due.length === 0) {
-      return NextResponse.json({
-        ok: true,
-        skipped: true,
-        reason: "all-feeds-fresh",
-        feedCount: PARTNER_ADS_FEEDS.length,
-      });
-    }
-
     const results = [];
+
     for (const feed of due) {
       if (Date.now() - started > TIME_BUDGET_MS) {
         results.push({
@@ -86,8 +79,21 @@ async function handle(request: Request) {
       return r && r.ok && !r.skipped;
     });
 
+    let retag: Awaited<ReturnType<typeof retagProductsMissingSeoTags>> | null =
+      null;
     let seo: { upserted: number; indexed: number } | null = null;
-    if (importedAny && Date.now() - started < TIME_BUDGET_MS) {
+
+    // Backfill seo:* tags on existing catalog (e.g. after pSEO deploy) even when
+    // Partner Ads TTL skips every feed — otherwise /gaver hubs stay empty.
+    if (Date.now() - started < TIME_BUDGET_MS) {
+      retag = await retagProductsMissingSeoTags({
+        batchSize: 100,
+        maxProducts: 3_000,
+      });
+      seo = retag.seo;
+    }
+
+    if (importedAny && !seo && Date.now() - started < TIME_BUDGET_MS) {
       seo = await syncSeoLandings();
     }
 
@@ -96,6 +102,7 @@ async function handle(request: Request) {
       dueCount: due.length,
       processed: results.length,
       results,
+      retag,
       seo,
       elapsedMs: Date.now() - started,
     });

@@ -97,7 +97,7 @@ Dækker normalize, rank, Zod-schemas, Partner Ads-mapping, FTS-helpers og finder
 | Script | Formål |
 |---|---|
 | `npm run dev` | Next.js udviklingsserver |
-| `npm run build` / `npm start` | Produktion (migrate + next build; feed-import kører via cron/CLI) |
+| `npm run build` / `npm start` | Produktion (migrate + SEO-backfill ≤45s + next build; feed-import via cron/CLI) |
 | `npm run import:feed` | Importer Partner Ads-feeds (eller sample med `IMPORT_SAMPLE=1`) |
 | `npm test` | Vitest |
 | `npm run lint` | ESLint |

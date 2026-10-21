@@ -1062,8 +1062,12 @@ a {
   font-size: 0.9rem;
 }
 
-.seo-hub__empty {
+.seo-hub__empty,
+.seo-landing__empty {
   color: var(--muted);
+  max-width: 36rem;
+  line-height: 1.55;
+  margin: 0 0 1.25rem;
 }
 
 .seo-hub__header p {

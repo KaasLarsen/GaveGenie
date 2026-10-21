@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { SeoBreadcrumbs } from "@/components/SeoBreadcrumbs";
 import { SeoFaq } from "@/components/SeoFaq";
@@ -82,21 +83,58 @@ export default async function GaverLandingPage({ params }: PageProps) {
   const resolved = resolveSlug(segments);
   if (!resolved) notFound();
 
-  const stats = await aggregateLandingStats(resolved.filters);
-  // Allow browsing thin hubs from the header; sitemap/indexation still requires SEO_MIN_PRODUCTS.
+  let stats = {
+    productCount: 0,
+    minPriceOre: null as number | null,
+    maxPriceOre: null as number | null,
+    topCategories: [] as string[],
+  };
+  try {
+    stats = await aggregateLandingStats(resolved.filters);
+  } catch {
+    // DB blip — still render the guide shell so header menu destinations work.
+  }
+
+  const copy = buildLandingCopy(resolved, {
+    ...stats,
+    topCategories: stats.topCategories,
+  });
+
   if (stats.productCount < 1) {
-    notFound();
+    return (
+      <article className="seo-landing section">
+        <header className="seo-landing__header">
+          <SeoBreadcrumbs crumbs={resolved.crumbs} />
+          <h1>{copy.h1}</h1>
+          <p className="seo-landing__lede">
+            Vi fylder denne guide op med konkrete forslag fra kataloget.
+          </p>
+        </header>
+
+        <section className="seo-landing__intro" aria-label="Introduktion">
+          <p>{copy.intro[0]}</p>
+          <p>{copy.intro[1]}</p>
+        </section>
+
+        <p className="seo-landing__empty">
+          Der er endnu ikke nok matchende produkter her. Brug gavefinderen, så
+          finder vi noget, der rammer plet lige nu.
+        </p>
+        <p>
+          <Link className="btn btn--primary" href="/#gave-soegning">
+            Find gave
+          </Link>
+        </p>
+
+        <SeoFaq items={copy.faq} />
+      </article>
+    );
   }
 
   const [products, related] = await Promise.all([
     fetchLandingProducts(resolved.filters, 24),
     findRelatedLandings(resolved, 6),
   ]);
-
-  const copy = buildLandingCopy(resolved, {
-    ...stats,
-    topCategories: stats.topCategories,
-  });
 
   return (
     <article className="seo-landing section">

@@ -11,6 +11,9 @@ export function SiteFooter() {
         </p>
         <nav className="site-footer__links" aria-label="Sidefod">
           <Link href="/gaver">Gaveidéer</Link>
+          <Link href="/gaver/til-ham">Til ham</Link>
+          <Link href="/gaver/til-hende">Til hende</Link>
+          <Link href="/gaver/jul">Jul</Link>
           <Link href="/om-os">Om os</Link>
           <Link href="/privatliv">Privatliv</Link>
           <Link href="/vilkaar">Vilkår</Link>
