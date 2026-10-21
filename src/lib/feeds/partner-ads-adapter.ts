@@ -260,7 +260,11 @@ export class PartnerAdsAdapter implements FeedAdapter {
           headers["If-Modified-Since"] = softMeta.meta.lastModified;
         }
 
-        const response = await this.fetchFn(source, { headers });
+        const response = await this.fetchFn(source, {
+          headers,
+          // Avoid hanging Vercel/cron jobs on a silent Partner Ads stall
+          signal: AbortSignal.timeout(45_000),
+        });
 
         if (response.status === 304 && softMeta) {
           xml = softMeta.xml;
