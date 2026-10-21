@@ -11,6 +11,7 @@
     "test:watch": "vitest",
     "import:feed": "tsx scripts/import-feed.ts",
     "import:feed:build": "tsx scripts/import-feeds-on-build.ts",
+    "pseo:sync-landings": "tsx scripts/sync-seo-landings.ts",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:deploy": "prisma migrate deploy",

@@ -28,6 +28,19 @@ import {
   isForceFeedRefresh,
 } from "../src/lib/feeds/feed-refresh-policy";
 import { prisma } from "../src/lib/db";
+import { syncSeoLandings } from "../src/lib/pseo/landings";
+
+async function syncLandingsAfterImport() {
+  console.log("Syncing programmatic SEO landings…");
+  const seo = await syncSeoLandings();
+  console.log(
+    JSON.stringify(
+      { seoLandingsUpserted: seo.upserted, seoLandingsIndexed: seo.indexed },
+      null,
+      2,
+    ),
+  );
+}
 
 async function importSample() {
   const adapter = new SampleFeedAdapter();
@@ -44,6 +57,7 @@ async function importSample() {
       2,
     ),
   );
+  await syncLandingsAfterImport();
 }
 
 async function importPartnerAdsFeeds() {
@@ -92,6 +106,10 @@ async function importPartnerAdsFeeds() {
   console.log(
     JSON.stringify({ imported, skipped, failed, feeds: results }, null, 2),
   );
+
+  if (imported > 0) {
+    await syncLandingsAfterImport();
+  }
 
   if (failed > 0) {
     process.exitCode = 1;

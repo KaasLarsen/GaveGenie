@@ -135,9 +135,21 @@ Import regenererer `Product.searchVector` (vægtet title/brand/category/tags/des
 - Evt. flere Partner Ads-feeds (tilføjes i registry)
 - one.com DNS → Vercel, når appen er live
 
+## Programmatic SEO
+
+Gaveguides under `/gaver/[...slug]` bygges fra kanoniske SEO-tags (`seo:modtager:…` m.fl.) som sættes ved feed-import (`src/lib/pseo/`). Efter import synkroniseres indexbare landings til `SeoLanding`.
+
+```bash
+npm run pseo:sync-landings
+```
+
+Eksempler: `/gaver/til-ham/gameren`, `/gaver/jul/under-200`. Kun landings med mindst 5 produkter indexes (sitemap + `generateMetadata`).
+
 ## Sider
 
 - `/` — forside (brand-first)
+- `/gaver` — hub for programmatiske gaveguides
+- `/gaver/[...slug]` — pSEO-landings (modtager/interesse/anledning/budget)
 - `/finder` — gavefinder
 - `/affiliate` — affiliate-disclosure
 - `/privatliv` — privatlivsstub

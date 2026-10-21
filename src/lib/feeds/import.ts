@@ -1,4 +1,5 @@
 import { prisma } from "../db";
+import { enrichProductsSeoTags } from "../pseo/enrich-tags";
 import { refreshProductSearchVectors } from "../search";
 import type { NormalizedProduct } from "../types";
 import type { FeedAdapter } from "./types";
@@ -119,9 +120,10 @@ export async function importFeed(adapter: FeedAdapter): Promise<ImportResult> {
 
   try {
     let count = 0;
+    const products = enrichProductsSeoTags(loaded.products);
 
-    for (let i = 0; i < loaded.products.length; i += BATCH_SIZE) {
-      const batch = loaded.products.slice(i, i + BATCH_SIZE);
+    for (let i = 0; i < products.length; i += BATCH_SIZE) {
+      const batch = products.slice(i, i + BATCH_SIZE);
       await upsertProductBatch(batch);
       count += batch.length;
     }

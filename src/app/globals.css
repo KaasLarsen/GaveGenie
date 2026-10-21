@@ -808,6 +808,144 @@ a {
   }
 }
 
+/* —— Programmatic SEO landings —— */
+.seo-landing,
+.seo-hub {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding-top: calc(var(--header-h) + 1.5rem);
+  padding-bottom: 3rem;
+}
+
+.seo-landing__header h1,
+.seo-hub__header h1 {
+  font-family: var(--font-display-stack);
+  font-size: clamp(2rem, 4vw, 2.75rem);
+  color: var(--navy);
+  font-weight: 400;
+  line-height: 1.15;
+  margin: 0.5rem 0 0.35rem;
+}
+
+.seo-landing__lede {
+  margin: 0 0 1.5rem;
+  color: var(--muted);
+  font-size: 1.05rem;
+}
+
+.seo-landing__intro {
+  display: grid;
+  gap: 0.85rem;
+  margin-bottom: 2rem;
+  max-width: 42rem;
+}
+
+.seo-landing__intro p {
+  margin: 0;
+  line-height: 1.65;
+  color: var(--ink);
+}
+
+.seo-landing__products h2,
+.seo-faq h2,
+.seo-related h2,
+.seo-hub__group h2 {
+  font-family: var(--font-display-stack);
+  font-size: 1.65rem;
+  color: var(--navy);
+  font-weight: 400;
+  margin: 2rem 0 0.75rem;
+}
+
+.seo-breadcrumbs {
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+.seo-breadcrumbs__list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.5rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.seo-breadcrumbs__list li:not(:last-child)::after {
+  content: "/";
+  margin-left: 0.5rem;
+  color: var(--line);
+}
+
+.seo-breadcrumbs a:hover {
+  color: var(--navy);
+  text-decoration: underline;
+}
+
+.seo-faq__list {
+  display: grid;
+  gap: 0.65rem;
+  max-width: 42rem;
+}
+
+.seo-faq__item {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 0.85rem 1rem;
+}
+
+.seo-faq__item summary {
+  cursor: pointer;
+  font-weight: 600;
+  color: var(--navy);
+}
+
+.seo-faq__item p {
+  margin: 0.65rem 0 0;
+  line-height: 1.55;
+  color: var(--ink);
+}
+
+.seo-related__list,
+.seo-hub__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.55rem;
+}
+
+.seo-related__list a,
+.seo-hub__list a {
+  color: var(--navy);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.seo-hub__list li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.5rem 1rem;
+}
+
+.seo-hub__count {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.seo-hub__empty {
+  color: var(--muted);
+}
+
+.seo-hub__header p {
+  max-width: 40rem;
+  line-height: 1.6;
+  color: var(--ink);
+}
+
 @keyframes hero-kenburns {
   from {
     transform: scale(1.02) translate3d(0, 0, 0);

@@ -6,6 +6,7 @@ import {
 import { partnerAdsProviderKey } from "@/lib/feeds/partner-ads-registry";
 import { importPartnerAdsFeed } from "@/lib/feeds/partner-ads-import";
 import { shouldSkipPartnerAdsImport } from "@/lib/feeds/feed-refresh-policy";
+import { syncSeoLandings } from "@/lib/pseo/landings";
 
 export const runtime = "nodejs";
 /** Pack as many feeds as fit — large shops (Med24/Booktok) need headroom. */
@@ -80,11 +81,22 @@ async function handle(request: Request) {
       });
     }
 
+    const importedAny = results.some((row) => {
+      const r = "result" in row ? row.result : null;
+      return r && r.ok && !r.skipped;
+    });
+
+    let seo: { upserted: number; indexed: number } | null = null;
+    if (importedAny && Date.now() - started < TIME_BUDGET_MS) {
+      seo = await syncSeoLandings();
+    }
+
     return NextResponse.json({
       ok: true,
       dueCount: due.length,
       processed: results.length,
       results,
+      seo,
       elapsedMs: Date.now() - started,
     });
   } catch (error) {

@@ -59,3 +59,23 @@ model FeedImport {
   startedAt    DateTime @default(now())
   finishedAt   DateTime?
 }
+
+/// Programmatic SEO landing page derived from taxonomy + product tag filters.
+model SeoLanding {
+  id           String   @id @default(cuid())
+  /// Path under /gaver/, e.g. "til-ham/gameren"
+  slug         String   @unique
+  /// recipient | occasion | recipient-interest | occasion-budget
+  pathPattern  String
+  /// { recipientId?, interestId?, occasionId?, budgetId?, budgetMaxOre? }
+  filters      Json
+  productCount Int      @default(0)
+  minPriceOre  Int?
+  maxPriceOre  Int?
+  /// True when productCount >= SEO_MIN_PRODUCTS (indexable)
+  indexed      Boolean  @default(false)
+  lastSyncedAt DateTime @updatedAt
+  createdAt    DateTime @default(now())
+
+  @@index([indexed])
+}

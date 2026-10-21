@@ -10,6 +10,7 @@ export function SiteFooter() {
           Gaveforslag matchet med AI.
         </p>
         <nav className="site-footer__links" aria-label="Sidefod">
+          <Link href="/gaver">Gaveidéer</Link>
           <Link href="/om-os">Om os</Link>
           <Link href="/privatliv">Privatliv</Link>
           <Link href="/vilkaar">Vilkår</Link>

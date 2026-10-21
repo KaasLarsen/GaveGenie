@@ -1,0 +1,37 @@
+---
+description: Programmatic SEO rules for GaveGenie gift landing pages
+globs:
+  - src/lib/pseo/**
+  - src/app/gaver/**
+  - src/app/sitemap.ts
+  - src/components/Seo*.tsx
+  - scripts/sync-seo-landings.ts
+alwaysApply: false
+---
+
+# GaveGenie programmatic SEO (pSEO)
+
+You are working on GaveGenie’s programmatic SEO engine. All user-facing copy is Danish (da-DK).
+
+## Architecture (do not reinvent)
+
+- Feed sync already lives in `src/lib/feeds/` (Partner Ads XML + sample JSON → `Product`).
+- Canonical SEO tags are applied at import via `src/lib/pseo/enrich-tags.ts` (`seo:modtager:*`, `seo:interesse:*`, `seo:anledning:*`, `seo:budget:*`).
+- Valid URL combinations come from `src/lib/pseo/taxonomy.ts` and resolve in `src/lib/pseo/slug.ts`.
+- Indexable landings are stored in Prisma `SeoLanding` (`indexed` when `productCount >= SEO_MIN_PRODUCTS`).
+- Landing template: `src/app/gaver/[...slug]/page.tsx` (SSR/ISR Server Components).
+
+## Hard constraints
+
+1. **30% uniqueness**: Landing intros/FAQ must use `buildLandingCopy` blueprints with per-slug variant hashing. Never ship a product-grid-only doorway page.
+2. **No invented catalog data**: Products, prices, and URLs come only from the DB/feeds. Never fabricate affiliate items.
+3. **Semantic HTML + crawlability**: Use `<header>`, `<main>` (layout), `<article>`, breadcrumb `<nav>`, FAQ, footer links. Core text and product lists must be server-rendered.
+4. **Internal links**: Related landings and breadcrumbs use Next.js `<Link href>` — never click-handlers for navigation.
+5. **Indexation guard**: Pages under `SEO_MIN_PRODUCTS` must `notFound()` and stay out of `src/app/sitemap.ts`.
+6. **Affiliate links**: Keep `rel="noopener noreferrer sponsored"` on outbound product CTAs (see `SeoProductCard`).
+
+## When changing pSEO
+
+- Extend taxonomy in `taxonomy.ts`, not ad-hoc slug strings in the page.
+- After feed/tagging changes, ensure `npm run pseo:sync-landings` (also hooked after `npm run import:feed`) stays valid.
+- Prefer deterministic blueprints over per-request LLM copy for landings.
