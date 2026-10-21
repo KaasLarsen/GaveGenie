@@ -4,7 +4,7 @@ import Link from "next/link";
 export const metadata: Metadata = {
   title: "Om os",
   description:
-    "Hvordan GaveGenie finder gaver med AI-matching, rigtige produktfeeds og affiliate-transparens.",
+    "Hvordan GaveGenie finder gaver med AI-matching, et rigtigt produktkatalog og affiliate-transparens.",
 };
 
 export default function AboutPage() {
@@ -20,10 +20,10 @@ export default function AboutPage() {
       <h2>Sådan virker det</h2>
       <p>
         Når du søger, matcher vi din fritekst (og eventuelle filtre) mod produkter
-        i vores database. Forslagene kommer fra importerede produktfeeds — ikke
+        i vores database. Forslagene kommer fra et rigtigt produktkatalog — ikke
         opdigtede varer. Hvis AI er konfigureret, skriver vi danske begrundelser
         for, hvorfor hver gave kan passe; selve produkterne, priserne og
-        lagerstatus kommer fra feedet.
+        lagerstatus kommer fra forhandlerne.
       </p>
 
       <h2 id="affiliate">Affiliate-model</h2>

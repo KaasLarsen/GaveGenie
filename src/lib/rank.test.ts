@@ -82,6 +82,46 @@ describe("rankProducts", () => {
     }
   });
 
+  it("does not treat vinyl as a vin match", () => {
+    const mixed: RankableProduct[] = [
+      {
+        id: "vinyl-weights",
+        title: "Håndvægte i vinyl",
+        description: "Sekskantede vægte i vinyl",
+        brand: "Odin",
+        category: "Træning",
+        tags: ["vinyl", "vægte"],
+        priceOre: 79900,
+        currency: "DKK",
+        imageUrl: null,
+        productUrl: "https://example.com/vinyl",
+        inStock: true,
+        isSample: false,
+        retailerName: "Apuls.dk",
+      },
+      {
+        id: "wine",
+        title: "Økologisk rødvin",
+        description: "Italiensk vin",
+        brand: "SPS",
+        category: "Vin",
+        tags: ["vin", "rødvin"],
+        priceOre: 12900,
+        currency: "DKK",
+        imageUrl: null,
+        productUrl: "https://example.com/wine",
+        inStock: true,
+        isSample: false,
+        retailerName: "SPS Wine",
+      },
+    ];
+    const ranked = rankProducts(mixed, { query: "vin til mor" }, 2, {
+      plannedQueries: ["vin", "rødvin"],
+    });
+    expect(ranked[0]?.id).toBe("wine");
+    expect(ranked.find((r) => r.id === "vinyl-weights")).toBeFalsy();
+  });
+
   it("prefers wine gifts over herrebukser for a mom who loves wine", () => {
     const mixed: RankableProduct[] = [
       {

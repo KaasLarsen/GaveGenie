@@ -9,6 +9,7 @@
 import "dotenv/config";
 import {
   PARTNER_ADS_FEEDS,
+  PARTNER_ADS_PRIORITY_FEED_IDS,
   type PartnerAdsFeedConfig,
 } from "../src/lib/feeds/partner-ads-registry";
 import { importPartnerAdsFeed } from "../src/lib/feeds/partner-ads-import";
@@ -16,13 +17,19 @@ import { prisma } from "../src/lib/db";
 
 /** Feed ids known to be very large — import after smaller shops. */
 const LARGE_FEED_IDS = new Set(["4330", "522", "2767"]);
+const PRIORITY_FEED_IDS = new Set<string>(PARTNER_ADS_PRIORITY_FEED_IDS);
 
 const DEFAULT_BUDGET_MS = 10 * 60 * 1000;
 
 function feedsByPriority(): PartnerAdsFeedConfig[] {
-  const small = PARTNER_ADS_FEEDS.filter((f) => !LARGE_FEED_IDS.has(f.feedId));
+  const priority = PARTNER_ADS_FEEDS.filter((f) =>
+    PRIORITY_FEED_IDS.has(f.feedId),
+  );
+  const small = PARTNER_ADS_FEEDS.filter(
+    (f) => !PRIORITY_FEED_IDS.has(f.feedId) && !LARGE_FEED_IDS.has(f.feedId),
+  );
   const large = PARTNER_ADS_FEEDS.filter((f) => LARGE_FEED_IDS.has(f.feedId));
-  return [...small, ...large];
+  return [...priority, ...small, ...large];
 }
 
 function budgetMs(): number {

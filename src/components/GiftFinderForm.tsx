@@ -154,8 +154,8 @@ export function GiftFinderForm() {
 
       {meta && results.length === 0 && !error && (
         <p className="finder-empty">
-          Ingen match i kataloget endnu. Importer sample-feedet, eller prøv en
-          bredere beskrivelse.
+          Vi fandt desværre ingen gode match lige nu. Prøv at beskrive
+          interessen lidt anderledes — fx “rødvin”, “kaffe” eller “plakat”.
         </p>
       )}
 

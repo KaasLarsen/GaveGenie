@@ -18,8 +18,8 @@ export default function AffiliatePage() {
       </p>
       <p>
         Vi opfinder aldrig produkter, priser eller lagerstatus. Forslag kommer
-        fra importerede produktfeeds. Produktlinks går via Partner Ads&apos;
-        tracking, så køb kan spores korrekt hos partnerne.
+        fra vores produktkatalog hos samarbejdende forhandlere. Produktlinks går
+        via Partner Ads&apos; tracking, så køb kan spores korrekt hos partnerne.
       </p>
       <p>
         I udviklingsmiljøet kan enkelte produkter stadig være markeret som{" "}

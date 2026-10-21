@@ -86,10 +86,14 @@ function interestMatchScore(
   let hits = 0;
   let titleHits = 0;
   for (const token of interestTokens) {
-    if (tokenHit(focus, token) || focus.includes(token)) {
-      hits += 1;
-      if (tokenHit(title, token) || title.includes(token)) titleHits += 1;
-    }
+    // Short tokens (vin) must use boundary hits — never substring (vinyl/vinter)
+    const focusHit =
+      token.length <= 3 ? tokenHit(focus, token) : tokenHit(focus, token) || focus.includes(token);
+    if (!focusHit) continue;
+    hits += 1;
+    const titleHit =
+      token.length <= 3 ? tokenHit(title, token) : tokenHit(title, token) || title.includes(token);
+    if (titleHit) titleHits += 1;
   }
   if (hits === 0) return 0;
   return hits / interestTokens.length + titleHits * 0.15;

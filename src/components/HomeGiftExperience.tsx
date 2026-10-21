@@ -227,8 +227,8 @@ export function HomeGiftExperience() {
 
             {hasSearched && meta && results.length === 0 && !error && !loading && (
               <p className="finder-empty">
-                Ingen match i kataloget endnu. Prøv en bredere beskrivelse — eller
-                kom tilbage når flere feeds er tilkoblet.
+                Vi fandt desværre ingen gode match lige nu. Prøv at beskrive
+                interessen lidt anderledes — fx “rødvin”, “kaffe” eller “plakat”.
               </p>
             )}
 

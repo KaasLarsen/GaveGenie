@@ -4,7 +4,7 @@ import Link from "next/link";
 export const metadata: Metadata = {
   title: "Vilkår",
   description:
-    "Brugsvilkår for GaveGenie — gaveforslag, produktfeeds og affiliate-links.",
+    "Brugsvilkår for GaveGenie — gaveforslag, produktkatalog og affiliate-links.",
 };
 
 export default function TermsPage() {
@@ -19,9 +19,10 @@ export default function TermsPage() {
       <h2>Tjenesten</h2>
       <p>
         GaveGenie er et gaveforslag-værktøj. Du indtaster ønsker og præferencer;
-        vi returnerer forslag baseret på et produktkatalog fra eksterne feeds.
-        Vi garanterer ikke, at et forslag er tilgængeligt, korrekt prissat eller
-        egnet i alle situationer — tjek altid hos forhandleren før køb.
+        vi returnerer forslag baseret på et produktkatalog fra samarbejdende
+        forhandlere. Vi garanterer ikke, at et forslag er tilgængeligt, korrekt
+        prissat eller egnet i alle situationer — tjek altid hos forhandleren før
+        køb.
       </p>
 
       <h2>AI og data</h2>
@@ -42,7 +43,7 @@ export default function TermsPage() {
       <h2>Ansvar</h2>
       <p>
         Tjenesten leveres &quot;som den er&quot; i MVP-fasen. Vi bestræber os på
-        korrekte data, men fejl i feeds, midlertidig utilgængelighed eller
+        korrekte data, men fejl i kataloget, midlertidig utilgængelighed eller
         tekniske udfald kan forekomme.
       </p>
 
