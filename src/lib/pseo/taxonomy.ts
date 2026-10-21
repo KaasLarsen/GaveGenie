@@ -211,7 +211,8 @@ export const INTERESTS: InterestDef[] = [
         "creme",
         "makeup",
         "hudpleje",
-        "duft",
+        // Avoid bare "duft" — candles/diffusers soft-mapped every scent to hende.
+        "duftlys",
         "spa",
       ],
     },
@@ -300,7 +301,16 @@ export const OCCASIONS: OccasionDef[] = [
     id: "jul",
     label: "jul",
     match: {
-      keywords: ["jul", "jule", "christmas", "advent", "gaveæske", "gaveaeske"],
+      // Avoid bare "gaveæske" — it tagged random gift boxes as Christmas.
+      keywords: [
+        "jul",
+        "jule",
+        "julegave",
+        "julekalender",
+        "christmas",
+        "advent",
+        "xmas",
+      ],
     },
   },
   {

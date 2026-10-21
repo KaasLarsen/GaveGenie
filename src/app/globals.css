@@ -972,6 +972,28 @@ a {
   color: var(--ink);
 }
 
+.seo-landing__tips {
+  max-width: 42rem;
+  margin: 0 0 2rem;
+}
+
+.seo-landing__tips h2 {
+  font-family: var(--font-display-stack);
+  font-size: 1.45rem;
+  color: var(--navy);
+  font-weight: 400;
+  margin: 0 0 0.65rem;
+}
+
+.seo-landing__tips ul {
+  margin: 0;
+  padding-left: 1.2rem;
+  display: grid;
+  gap: 0.45rem;
+  color: var(--ink);
+  line-height: 1.55;
+}
+
 .seo-landing__products h2,
 .seo-faq h2,
 .seo-related h2,

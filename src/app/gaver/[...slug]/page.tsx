@@ -5,8 +5,12 @@ import { SeoBreadcrumbs } from "@/components/SeoBreadcrumbs";
 import { SeoFaq } from "@/components/SeoFaq";
 import { SeoProductCard } from "@/components/SeoProductCard";
 import { SeoRelatedLandings } from "@/components/SeoRelatedLandings";
-import { buildLandingCopy } from "@/lib/pseo/content-blueprints";
+import {
+  buildLandingCopy,
+  type LandingCopy,
+} from "@/lib/pseo/content-blueprints";
 import { SEO_MIN_PRODUCTS } from "@/lib/pseo/constants";
+import { getHubEditorial } from "@/lib/pseo/hub-editorial";
 import {
   aggregateLandingStats,
   fetchLandingProducts,
@@ -15,7 +19,9 @@ import {
   LANDING_PRODUCT_LIMIT,
   listIndexedLandings,
   uniqueRetailerCount,
+  type SeoProductRow,
 } from "@/lib/pseo/landings";
+import { buildLandingWhy } from "@/lib/pseo/product-why";
 import { resolveSlug } from "@/lib/pseo/slug";
 
 export const revalidate = 300;
@@ -23,6 +29,28 @@ export const revalidate = 300;
 type PageProps = {
   params: Promise<{ slug: string[] }>;
 };
+
+function resolveCopy(
+  resolved: NonNullable<ReturnType<typeof resolveSlug>>,
+  stats: {
+    productCount: number;
+    minPriceOre: number | null;
+    maxPriceOre: number | null;
+    topCategories: string[];
+  },
+): LandingCopy {
+  return getHubEditorial(resolved.slug, stats) ?? buildLandingCopy(resolved, stats);
+}
+
+function withWhys(
+  products: SeoProductRow[],
+  filters: NonNullable<ReturnType<typeof resolveSlug>>["filters"],
+): SeoProductRow[] {
+  return products.map((product) => ({
+    ...product,
+    why: buildLandingWhy(product, filters),
+  }));
+}
 
 export async function generateStaticParams() {
   try {
@@ -68,7 +96,7 @@ export async function generateMetadata({
 
   const indexed =
     (landing?.indexed ?? false) || stats.productCount >= SEO_MIN_PRODUCTS;
-  const copy = buildLandingCopy(resolved, stats);
+  const copy = resolveCopy(resolved, stats);
   const siteUrl =
     process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") ||
     "http://localhost:3000";
@@ -108,7 +136,7 @@ export default async function GaverLandingPage({ params }: PageProps) {
     // DB blip — still render the guide shell so header menu destinations work.
   }
 
-  const copy = buildLandingCopy(resolved, {
+  const copy = resolveCopy(resolved, {
     ...stats,
     topCategories: stats.topCategories,
   });
@@ -125,9 +153,21 @@ export default async function GaverLandingPage({ params }: PageProps) {
         </header>
 
         <section className="seo-landing__intro" aria-label="Introduktion">
-          <p>{copy.intro[0]}</p>
-          <p>{copy.intro[1]}</p>
+          {copy.intro.map((paragraph) => (
+            <p key={paragraph.slice(0, 48)}>{paragraph}</p>
+          ))}
         </section>
+
+        {copy.tips ? (
+          <section className="seo-landing__tips" aria-labelledby="seo-tips-heading">
+            <h2 id="seo-tips-heading">{copy.tips.title}</h2>
+            <ul>
+              {copy.tips.items.map((item) => (
+                <li key={item}>{item}</li>
+              ))}
+            </ul>
+          </section>
+        ) : null}
 
         <p className="seo-landing__empty">
           Der er endnu ikke nok matchende produkter her. Brug gavefinderen, så
@@ -148,8 +188,9 @@ export default async function GaverLandingPage({ params }: PageProps) {
     fetchLandingProducts(resolved.filters, LANDING_PRODUCT_LIMIT),
     findRelatedLandings(resolved, 6),
   ]);
+  const productsWithWhy = withWhys(products, resolved.filters);
 
-  const shopCount = uniqueRetailerCount(products);
+  const shopCount = uniqueRetailerCount(productsWithWhy);
   const ledeParts = [
     `${stats.productCount} gaveidéer i kataloget`,
     stats.minPriceOre != null
@@ -157,6 +198,10 @@ export default async function GaverLandingPage({ params }: PageProps) {
       : null,
     shopCount >= 2 ? `forslag fra ${shopCount} butikker` : null,
   ].filter(Boolean);
+
+  const productsHeading =
+    copy.productsHeading ??
+    `${productsWithWhy.length} gaveidéer`;
 
   return (
     <article className="seo-landing section">
@@ -167,17 +212,29 @@ export default async function GaverLandingPage({ params }: PageProps) {
       </header>
 
       <section className="seo-landing__intro" aria-label="Introduktion">
-        <p>{copy.intro[0]}</p>
-        <p>{copy.intro[1]}</p>
+        {copy.intro.map((paragraph) => (
+          <p key={paragraph.slice(0, 48)}>{paragraph}</p>
+        ))}
       </section>
+
+      {copy.tips ? (
+        <section className="seo-landing__tips" aria-labelledby="seo-tips-heading">
+          <h2 id="seo-tips-heading">{copy.tips.title}</h2>
+          <ul>
+            {copy.tips.items.map((item) => (
+              <li key={item}>{item}</li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
 
       <section
         className="seo-landing__products"
         aria-labelledby="seo-products-heading"
       >
-        <h2 id="seo-products-heading">Udvalgte forslag</h2>
+        <h2 id="seo-products-heading">{productsHeading}</h2>
         <div className="product-grid">
-          {products.map((product) => (
+          {productsWithWhy.map((product) => (
             <SeoProductCard key={product.id} product={product} />
           ))}
         </div>

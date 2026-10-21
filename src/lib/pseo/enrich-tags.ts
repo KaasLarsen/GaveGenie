@@ -144,6 +144,35 @@ function hasChildSignal(blob: string): boolean {
 }
 
 /**
+ * Soft gender only from clearly gendered interest signals — not board games
+ * alone (brætspil) or vague scent words. Keeps til-ham/gameren usable while
+ * stopping bare hubs from filling with weak soft matches.
+ */
+const SOFT_MALE_INTEREST = [
+  "gaming",
+  "gamer",
+  "playstation",
+  "xbox",
+  "nintendo",
+  "controller",
+  "headset",
+  "computergame",
+  "pc-spil",
+  "pc spil",
+];
+
+const SOFT_FEMALE_INTEREST = [
+  "parfume",
+  "makeup",
+  "hudpleje",
+  "skønhed",
+  "skoenhed",
+  "beauty",
+  "spa",
+  "creme",
+];
+
+/**
  * Strip previous seo:* tags then re-apply from taxonomy matchers.
  * Recipient ham/hende require strong gender signals — never soft-tag
  * every book onto both gift guides.
@@ -179,21 +208,22 @@ export function enrichProductSeoTags(
     }
   }
 
-  // Soft recipient only for clearly gendered interests, never on kids.
+  // Soft recipient from strong gendered-interest signals (not bare "duft").
+  // Board games may soft-map to ham so til-ham/gameren stays populated;
+  // bare hubs demote them via giftability ranking.
   if (
     !isChild &&
     !seoTags.has(recipientSeoTag("ham")) &&
     !seoTags.has(recipientSeoTag("hende"))
   ) {
-    const interestIds = [...seoTags]
-      .filter((t) => t.startsWith("seo:interesse:"))
-      .map((t) => t.slice("seo:interesse:".length));
-    if (interestIds.includes("gameren") && !interestIds.includes("skoenhed")) {
+    const softMale = matchesKeywords(blob, SOFT_MALE_INTEREST);
+    const softFemale = matchesKeywords(blob, SOFT_FEMALE_INTEREST);
+    const boardGame =
+      seoTags.has(interestSeoTag("gameren")) &&
+      matchesKeywords(blob, ["brætspil", "braetspil", "boardgame"]);
+    if ((softMale || boardGame) && !softFemale) {
       seoTags.add(recipientSeoTag("ham"));
-    } else if (
-      interestIds.includes("skoenhed") &&
-      !interestIds.includes("gameren")
-    ) {
+    } else if (softFemale && !softMale && !boardGame) {
       seoTags.add(recipientSeoTag("hende"));
     }
   }

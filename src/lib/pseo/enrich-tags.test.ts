@@ -130,6 +130,53 @@ describe("enrichProductSeoTags", () => {
     expect(enriched.tags).not.toContain(occasionSeoTag("jul"));
   });
 
+  it("does not treat bare gaveæske as jul", () => {
+    const enriched = enrichProductSeoTags(
+      base({
+        title: "Olivenolie gaveæske",
+        category: "Mad",
+        priceOre: 199_00,
+      }),
+    );
+    expect(enriched.tags).not.toContain(occasionSeoTag("jul"));
+  });
+
+  it("tags explicit julekalender as jul", () => {
+    const enriched = enrichProductSeoTags(
+      base({
+        title: "Julekalender med chokolade",
+        category: "Mad",
+        priceOre: 179_00,
+      }),
+    );
+    expect(enriched.tags).toContain(occasionSeoTag("jul"));
+  });
+
+  it("does not soft-map diffuser scent alone onto til-hende", () => {
+    const enriched = enrichProductSeoTags(
+      base({
+        title: "Diffuser med duft",
+        category: "Bolig",
+        tags: ["duft"],
+        priceOre: 129_00,
+      }),
+    );
+    expect(enriched.tags).not.toContain(recipientSeoTag("hende"));
+    expect(enriched.tags).not.toContain(interestSeoTag("skoenhed"));
+  });
+
+  it("still soft-maps gaming headset onto til-ham", () => {
+    const enriched = enrichProductSeoTags(
+      base({
+        title: "RGB gaming headset",
+        category: "Elektronik",
+        priceOre: 349_00,
+      }),
+    );
+    expect(enriched.tags).toContain(interestSeoTag("gameren"));
+    expect(enriched.tags).toContain(recipientSeoTag("ham"));
+  });
+
   it("strips and regenerates previous seo tags", () => {
     const enriched = enrichProductSeoTags(
       base({

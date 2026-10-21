@@ -4,6 +4,7 @@ import {
   PARTNER_ADS_FEEDS,
   PARTNER_ADS_PRIORITY_FEED_IDS,
 } from "../feeds/partner-ads-registry";
+import { normalizeText } from "../normalize";
 import { SEO_MIN_PRODUCTS } from "./constants";
 import type { ResolvedSlug } from "./slug";
 import { resolveSlug } from "./slug";
@@ -39,6 +40,43 @@ const MASS_CATALOG_RETAILER_NAMES = new Set([
   "med24.dk",
 ]);
 
+const STRONG_MALE_PHRASES = [
+  "til ham",
+  "gave til ham",
+  "herre",
+  "herretoj",
+  "herrebekladning",
+  "gentleman",
+  "menswear",
+];
+const STRONG_FEMALE_PHRASES = [
+  "til hende",
+  "gave til hende",
+  "dame",
+  "dametoj",
+  "damebekladning",
+  "womenswear",
+  "ladieswear",
+];
+const WEAK_HUB_FILLER = [
+  "braetspil",
+  "brætspil",
+  "boardgame",
+  "sojalys",
+  "duftlys",
+  "diffuser",
+];
+const GIFT_SIGNAL = [
+  "gave",
+  "gaveide",
+  "gaveæske",
+  "gaveaeske",
+  "julegave",
+  "set",
+  "kit",
+  "pakke",
+];
+
 export type SeoProductRow = {
   id: string;
   title: string;
@@ -53,6 +91,8 @@ export type SeoProductRow = {
   inStock: boolean | null;
   isSample: boolean;
   retailerName: string;
+  /** Deterministic Danish rationale for guide cards */
+  why?: string;
 };
 
 function retailerKey(name: string): string {
@@ -74,46 +114,143 @@ function isMassCatalogRetailer(name: string): boolean {
   return key.includes("booktok") || key.includes("med24");
 }
 
-/**
- * Rank a candidate pool for guide pages: priority gift shops first,
- * mega-catalogs (Booktok/Med24) last unless the hub is book-focused.
- */
-export function rankLandingCandidates<T extends {
-  retailerName: string;
-  inStock: boolean | null;
-  priceOre: number | null;
+function blobFor(product: {
   title: string;
-}>(
-  candidates: T[],
-  options?: { allowMassCatalog?: boolean },
-): T[] {
+  category?: string | null;
+  brand?: string | null;
+  tags?: string[];
+}): string {
+  return normalizeText(
+    [product.title, product.category ?? "", product.brand ?? "", ...(product.tags ?? [])].join(
+      " ",
+    ),
+  );
+}
+
+function includesAny(blob: string, needles: string[]): boolean {
+  return needles.some((n) => {
+    const needle = normalizeText(n);
+    if (!needle) return false;
+    return (
+      blob === needle ||
+      blob.startsWith(`${needle} `) ||
+      blob.endsWith(` ${needle}`) ||
+      blob.includes(` ${needle} `) ||
+      (needle.includes(" ") && blob.includes(needle))
+    );
+  });
+}
+
+export type GiftabilityOptions = {
+  allowMassCatalog?: boolean;
+  filters?: LandingFilters;
+};
+
+/**
+ * Score how strong a gift pick is for a landing (higher = better).
+ * Prefers gift shops, mid-range prices, clear gift/gender/occasion signals.
+ */
+export function giftabilityScore(
+  product: {
+    retailerName: string;
+    inStock: boolean | null;
+    priceOre: number | null;
+    title: string;
+    category?: string | null;
+    brand?: string | null;
+    tags?: string[];
+  },
+  options?: GiftabilityOptions,
+): number {
   const allowMass = Boolean(options?.allowMassCatalog);
-  return [...candidates].sort((a, b) => {
-    const aPriority = isPriorityRetailer(a.retailerName) ? 1 : 0;
-    const bPriority = isPriorityRetailer(b.retailerName) ? 1 : 0;
-    if (aPriority !== bPriority) return bPriority - aPriority;
+  const filters = options?.filters;
+  const bareRecipientHub =
+    Boolean(filters?.recipientId) &&
+    !filters?.interestId &&
+    (filters?.recipientId === "ham" || filters?.recipientId === "hende");
+  const blob = blobFor(product);
+  let score = 0;
 
-    if (!allowMass) {
-      const aMass = isMassCatalogRetailer(a.retailerName) ? 1 : 0;
-      const bMass = isMassCatalogRetailer(b.retailerName) ? 1 : 0;
-      if (aMass !== bMass) return aMass - bMass;
+  if (isPriorityRetailer(product.retailerName)) score += 40;
+  if (!allowMass && isMassCatalogRetailer(product.retailerName)) score -= 55;
+
+  if (product.inStock === true) score += 18;
+  else if (product.inStock === null) score += 6;
+
+  const price = product.priceOre;
+  if (price != null) {
+    if (price >= 150_00 && price <= 600_00) score += 22;
+    else if (price >= 80_00 && price < 150_00) score += 12;
+    else if (price > 600_00 && price <= 1200_00) score += 8;
+    else if (price > 1200_00) score -= 5;
+    else if (price < 50_00) score -= 8;
+  }
+
+  if (includesAny(blob, GIFT_SIGNAL)) score += 12;
+
+  if (filters?.recipientId === "ham") {
+    if (includesAny(blob, STRONG_MALE_PHRASES)) score += 28;
+    if (bareRecipientHub && includesAny(blob, WEAK_HUB_FILLER)) score -= 35;
+  }
+  if (filters?.recipientId === "hende") {
+    if (includesAny(blob, STRONG_FEMALE_PHRASES)) score += 28;
+    if (bareRecipientHub && includesAny(blob, WEAK_HUB_FILLER)) score -= 35;
+  }
+
+  if (filters?.occasionId === "jul") {
+    if (includesAny(blob, ["jul", "jule", "christmas", "advent", "julegave"])) {
+      score += 30;
     }
+    // Plain gift boxes without Christmas signal are weak jul picks.
+    if (
+      includesAny(blob, ["gaveæske", "gaveaeske"]) &&
+      !includesAny(blob, ["jul", "jule", "christmas", "advent"])
+    ) {
+      score -= 25;
+    }
+  } else if (filters?.occasionId) {
+    const occasion = OCCASIONS.find((o) => o.id === filters.occasionId);
+    if (occasion && includesAny(blob, occasion.match.keywords)) score += 20;
+  }
 
-    const aStock = a.inStock === true ? 1 : 0;
-    const bStock = b.inStock === true ? 1 : 0;
-    if (aStock !== bStock) return bStock - aStock;
+  if (filters?.interestId) {
+    const interest = INTERESTS.find((i) => i.id === filters.interestId);
+    if (interest && includesAny(blob, interest.match.keywords)) score += 18;
+  }
 
-    const aPrice = a.priceOre ?? -1;
-    const bPrice = b.priceOre ?? -1;
-    if (aPrice !== bPrice) return bPrice - aPrice;
+  if (product.tags?.includes(recipientSeoTag("barn")) && bareRecipientHub) {
+    score -= 40;
+  }
 
+  return score;
+}
+
+/**
+ * Rank a candidate pool for guide pages by giftability (not raw price).
+ */
+export function rankLandingCandidates<
+  T extends {
+    retailerName: string;
+    inStock: boolean | null;
+    priceOre: number | null;
+    title: string;
+    category?: string | null;
+    brand?: string | null;
+    tags?: string[];
+  },
+>(candidates: T[], options?: GiftabilityOptions): T[] {
+  return [...candidates].sort((a, b) => {
+    const scoreDiff =
+      giftabilityScore(b, options) - giftabilityScore(a, options);
+    if (scoreDiff !== 0) return scoreDiff;
     return a.title.localeCompare(b.title, "da");
   });
 }
 
 /**
- * Hard per-shop cap for guides (no overflow fill). Better a short multi-shop
- * list than 12 identical Rollerblade SKUs from one catalog.
+ * Prefer multi-shop shortlists (max N per retailer). If several shops are
+ * present but the list is still short, soft-overflow ignoring the cap.
+ * Single-shop pools stay hard-capped (better short than 12 identical SKUs).
  */
 export function diversifyLandingStrict<T extends { retailerName: string }>(
   ranked: T[],
@@ -122,26 +259,47 @@ export function diversifyLandingStrict<T extends { retailerName: string }>(
 ): T[] {
   const counts = new Map<string, number>();
   const selected: T[] = [];
+  const selectedIds = new Set<T>();
+  const poolRetailers = new Set(
+    ranked.map((item) => item.retailerName || "unknown"),
+  );
+
   for (const item of ranked) {
     const key = item.retailerName || "unknown";
     const n = counts.get(key) ?? 0;
     if (n >= maxPerRetailer) continue;
     selected.push(item);
+    selectedIds.add(item);
     counts.set(key, n + 1);
-    if (selected.length >= limit) break;
+    if (selected.length >= limit) return selected;
   }
+
+  if (selected.length < limit && poolRetailers.size >= 2) {
+    for (const item of ranked) {
+      if (selectedIds.has(item)) continue;
+      selected.push(item);
+      selectedIds.add(item);
+      if (selected.length >= limit) break;
+    }
+  }
+
   return selected;
 }
 
-export function selectLandingProducts<T extends {
-  retailerName: string;
-  inStock: boolean | null;
-  priceOre: number | null;
-  title: string;
-}>(
+export function selectLandingProducts<
+  T extends {
+    retailerName: string;
+    inStock: boolean | null;
+    priceOre: number | null;
+    title: string;
+    category?: string | null;
+    brand?: string | null;
+    tags?: string[];
+  },
+>(
   candidates: T[],
   limit = LANDING_PRODUCT_LIMIT,
-  options?: { allowMassCatalog?: boolean },
+  options?: GiftabilityOptions,
 ): T[] {
   const ranked = rankLandingCandidates(candidates, options);
   return diversifyLandingStrict(ranked, limit, LANDING_MAX_PER_RETAILER);
@@ -228,7 +386,7 @@ export async function fetchLandingProducts(
     retailerName: r.retailer.name,
   }));
 
-  return selectLandingProducts(mapped, limit, { allowMassCatalog });
+  return selectLandingProducts(mapped, limit, { allowMassCatalog, filters });
 }
 
 export async function aggregateLandingStats(filters: LandingFilters): Promise<{

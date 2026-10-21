@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { SEO_MIN_PRODUCTS } from "./constants";
 import {
+  giftabilityScore,
   LANDING_MAX_PER_RETAILER,
   LANDING_PRODUCT_LIMIT,
   productWhereForFilters,
@@ -13,19 +14,29 @@ function candidate(
   id: string,
   retailerName: string,
   priceOre = 200_00,
+  extra?: Partial<{
+    title: string;
+    category: string | null;
+    tags: string[];
+    inStock: boolean | null;
+  }>,
 ): {
   id: string;
   retailerName: string;
   inStock: boolean | null;
   priceOre: number | null;
   title: string;
+  category: string | null;
+  tags: string[];
 } {
   return {
     id,
     retailerName,
-    inStock: true,
+    inStock: extra?.inStock ?? true,
     priceOre,
-    title: `Produkt ${id}`,
+    title: extra?.title ?? `Produkt ${id}`,
+    category: extra?.category ?? null,
+    tags: extra?.tags ?? [],
   };
 }
 
@@ -82,6 +93,52 @@ describe("selectLandingProducts", () => {
     );
     expect(names.some((n) => n === "DH Wines")).toBe(true);
     expect(uniqueRetailerCount(out)).toBeGreaterThanOrEqual(3);
+  });
+
+  it("soft-overflow fills multi-shop pools that would otherwise stay short", () => {
+    const pool = [
+      ...Array.from({ length: 5 }, (_, i) =>
+        candidate(`a${i}`, "Shop A", 400_00),
+      ),
+      ...Array.from({ length: 5 }, (_, i) =>
+        candidate(`b${i}`, "Shop B", 350_00),
+      ),
+    ];
+    const out = selectLandingProducts(pool, 8);
+    expect(out.length).toBe(8);
+    expect(uniqueRetailerCount(out)).toBe(2);
+  });
+
+  it("keeps a hard cap when the pool is a single shop", () => {
+    const pool = Array.from({ length: 10 }, (_, i) =>
+      candidate(`only${i}`, "SingleShop", 300_00 - i),
+    );
+    const out = selectLandingProducts(pool, 8);
+    expect(out).toHaveLength(LANDING_MAX_PER_RETAILER);
+  });
+
+  it("ranks strong ham gifts above board-game hub filler", () => {
+    const strong = candidate("watch", "DH Wines", 399_00, {
+      title: "Herreur klassisk",
+      category: "Herrebeklædning > Gaver til ham",
+      tags: ["seo:modtager:ham"],
+    });
+    const filler = candidate("board", "Billigsport24", 899_00, {
+      title: "Brætspil for voksne",
+      tags: ["seo:modtager:ham", "seo:interesse:gameren"],
+    });
+    const strongScore = giftabilityScore(strong, {
+      filters: { recipientId: "ham" },
+    });
+    const fillerScore = giftabilityScore(filler, {
+      filters: { recipientId: "ham" },
+    });
+    expect(strongScore).toBeGreaterThan(fillerScore);
+
+    const out = selectLandingProducts([filler, strong], 2, {
+      filters: { recipientId: "ham" },
+    });
+    expect(out[0]?.id).toBe("watch");
   });
 });
 

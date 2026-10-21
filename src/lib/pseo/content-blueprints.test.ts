@@ -3,6 +3,7 @@ import {
   buildLandingCopy,
   textUniquenessRatio,
 } from "./content-blueprints";
+import { getHubEditorial } from "./hub-editorial";
 import { resolveSlug } from "./slug";
 
 const stats = {
@@ -13,20 +14,22 @@ const stats = {
 };
 
 describe("buildLandingCopy", () => {
-  it("builds Danish H1, intro, FAQ and metadata for recipient-interest", () => {
+  it("builds Danish H1, intro, tips, FAQ and metadata for recipient-interest", () => {
     const resolved = resolveSlug(["til-ham", "gameren"])!;
     const copy = buildLandingCopy(resolved, stats);
     expect(copy.h1).toMatch(/gaver/i);
     expect(copy.h1).toMatch(/gamer/i);
-    expect(copy.intro).toHaveLength(2);
-    expect(copy.intro[0].length).toBeGreaterThan(40);
+    expect(copy.intro.length).toBeGreaterThanOrEqual(2);
+    expect(copy.intro[0]!.length).toBeGreaterThan(40);
+    expect(copy.tips?.items.length).toBeGreaterThanOrEqual(2);
+    expect(copy.productsHeading).toMatch(/gamer/i);
     expect(copy.faq).toHaveLength(3);
     expect(copy.metaTitle.length).toBeLessThanOrEqual(60);
     expect(copy.metaDescription).toMatch(/18/);
     expect(copy.metaDescription).toMatch(/129/);
   });
 
-  it("keeps sibling pages sufficiently unique (≥30% token distance)", () => {
+  it("keeps sibling interest pages sufficiently unique (≥30% token distance)", () => {
     const a = resolveSlug(["til-ham", "gameren"])!;
     const b = resolveSlug(["til-ham", "tech"])!;
     const copyA = buildLandingCopy(a, stats);
@@ -34,10 +37,18 @@ describe("buildLandingCopy", () => {
       ...stats,
       topCategories: ["Elektronik", "Gadget"],
     });
-    const textA = `${copyA.intro[0]} ${copyA.intro[1]} ${copyA.faq.map((f) => f.answer).join(" ")}`;
-    const textB = `${copyB.intro[0]} ${copyB.intro[1]} ${copyB.faq.map((f) => f.answer).join(" ")}`;
+    const textA = `${copyA.intro.join(" ")} ${copyA.faq.map((f) => f.answer).join(" ")} ${copyA.tips?.items.join(" ") ?? ""}`;
+    const textB = `${copyB.intro.join(" ")} ${copyB.faq.map((f) => f.answer).join(" ")} ${copyB.tips?.items.join(" ") ?? ""}`;
     const uniqueness = textUniquenessRatio(textA, textB);
     expect(uniqueness).toBeGreaterThanOrEqual(0.3);
+  });
+
+  it("keeps hub editorial distinct from sibling blueprint pages", () => {
+    const hub = getHubEditorial("til-ham", stats)!;
+    const sibling = buildLandingCopy(resolveSlug(["til-ham", "tech"])!, stats);
+    const textHub = `${hub.intro.join(" ")} ${hub.faq.map((f) => f.answer).join(" ")}`;
+    const textSibling = `${sibling.intro.join(" ")} ${sibling.faq.map((f) => f.answer).join(" ")}`;
+    expect(textUniquenessRatio(textHub, textSibling)).toBeGreaterThanOrEqual(0.3);
   });
 
   it("is deterministic for the same slug", () => {

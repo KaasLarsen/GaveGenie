@@ -5,7 +5,17 @@ type Props = {
   product: SeoProductRow;
 };
 
+function shortDescription(description: string | null): string | null {
+  if (!description) return null;
+  const cleaned = description.replace(/\s+/g, " ").trim();
+  if (cleaned.length < 24) return null;
+  if (cleaned.length <= 140) return cleaned;
+  return `${cleaned.slice(0, 137).trimEnd()}…`;
+}
+
 export function SeoProductCard({ product }: Props) {
+  const blurb = shortDescription(product.description);
+
   return (
     <article className="product-card">
       <div className="product-card__media">
@@ -33,6 +43,11 @@ export function SeoProductCard({ product }: Props) {
           {formatPriceDkk(product.priceOre, product.currency)}
         </p>
         <p className="product-card__stock">{stockLabel(product.inStock)}</p>
+        {product.why ? (
+          <p className="product-card__why">{product.why}</p>
+        ) : blurb ? (
+          <p className="product-card__why">{blurb}</p>
+        ) : null}
         <a
           className="product-card__cta"
           href={product.productUrl}
