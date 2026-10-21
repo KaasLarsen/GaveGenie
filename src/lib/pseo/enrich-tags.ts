@@ -43,7 +43,10 @@ function matchesKeywords(blob: string, keywords: string[]): boolean {
   return false;
 }
 
-/** Strong, low-noise phrases for gendered gift guides. */
+/**
+ * Strong gendered gift signals. Prefer multi-word / apparel phrases —
+ * bare "herre"/"women"/"kvinde" matched random book titles.
+ */
 const STRONG_MALE = [
   "til ham",
   "gave til ham",
@@ -52,12 +55,15 @@ const STRONG_MALE = [
   "herrebekladning",
   "herretoj",
   "herretoej",
+  "herremode",
   "herre mode",
-  "herrer",
-  "herre",
-  "mande",
+  "herre sko",
+  "herre ur",
+  "herrejakke",
+  "herreskjorte",
+  "herrebukser",
   "for men",
-  "male",
+  "menswear",
   "gentleman",
   "gentlemen",
 ];
@@ -70,16 +76,14 @@ const STRONG_FEMALE = [
   "damebekladning",
   "dametoj",
   "dametoej",
+  "damemode",
   "dame mode",
-  "damer",
-  "dame",
-  "kvinder",
-  "kvinde",
+  "dame sko",
+  "dame taske",
+  "dameur",
   "for women",
-  "womens",
-  "women",
-  "female",
-  "ladies",
+  "womenswear",
+  "ladieswear",
 ];
 
 const CHILD_SIGNAL = [

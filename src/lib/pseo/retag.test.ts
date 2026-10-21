@@ -8,7 +8,7 @@ function sample(partial: Partial<NormalizedProduct> = {}): NormalizedProduct {
     externalId: "1",
     retailerSlug: "shop",
     retailerName: "Shop",
-    title: "Fleecetrøje herre",
+    title: "Fleecetrøje",
     description: "Gaveidéer til ham",
     category: "Herrebeklædning",
     tags: [],

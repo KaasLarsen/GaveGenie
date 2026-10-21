@@ -39,6 +39,22 @@ describe("productWhereForFilters", () => {
 
     expect(
       productWhereForFilters({
+        recipientId: "hende",
+      }),
+    ).toEqual({
+      tags: {
+        hasEvery: ["seo:modtager:hende"],
+      },
+      NOT: {
+        OR: [
+          { tags: { has: "seo:modtager:barn" } },
+          { tags: { has: "seo:interesse:laeseren" } },
+        ],
+      },
+    });
+
+    expect(
+      productWhereForFilters({
         occasionId: "jul",
         budgetId: "under-200",
         budgetMaxOre: 200_00,

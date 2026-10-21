@@ -85,7 +85,7 @@ describe("enrichProductSeoTags", () => {
   it("tags explicit herretøj for ham", () => {
     const enriched = enrichProductSeoTags(
       base({
-        title: "Fleecetrøje herre",
+        title: "Fleecetrøje",
         category: "Herrebeklædning > Gaveidéer til ham",
         priceOre: 299_00,
       }),
@@ -97,13 +97,25 @@ describe("enrichProductSeoTags", () => {
   it("tags explicit dame products for hende", () => {
     const enriched = enrichProductSeoTags(
       base({
-        title: "SilkescARF",
-        category: "Damebeklædning",
-        tags: ["dame"],
+        title: "Silketørklæde",
+        category: "Damebeklædning > Gaveidéer til hende",
+        tags: ["female"],
         priceOre: 249_00,
       }),
     );
     expect(enriched.tags).toContain(recipientSeoTag("hende"));
+    expect(enriched.tags).not.toContain(recipientSeoTag("ham"));
+  });
+
+  it("does not treat a book titled Women as a gift for hende", () => {
+    const enriched = enrichProductSeoTags(
+      base({
+        title: "Annie Leibovitz: Women",
+        category: "Bøger",
+        priceOre: 499_00,
+      }),
+    );
+    expect(enriched.tags).not.toContain(recipientSeoTag("hende"));
     expect(enriched.tags).not.toContain(recipientSeoTag("ham"));
   });
 

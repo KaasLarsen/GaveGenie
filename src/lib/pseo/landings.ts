@@ -52,9 +52,16 @@ export function productWhereForFilters(
   if (filters.budgetMaxOre != null) {
     where.priceOre = { lte: filters.budgetMaxOre };
   }
-  // Adult recipient hubs must not surface children's products.
+  // Adult recipient hubs: no children's products, and no pure book-catalog
+  // filler (Booktok etc. tagged only as læseren).
   if (filters.recipientId === "ham" || filters.recipientId === "hende") {
-    where.NOT = { tags: { has: recipientSeoTag("barn") } };
+    const notClauses: Prisma.ProductWhereInput[] = [
+      { tags: { has: recipientSeoTag("barn") } },
+    ];
+    if (!filters.interestId) {
+      notClauses.push({ tags: { has: interestSeoTag("laeseren") } });
+    }
+    where.NOT = notClauses.length === 1 ? notClauses[0] : { OR: notClauses };
   }
   return where;
 }
