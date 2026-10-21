@@ -12,7 +12,13 @@
       "description": "Et robust hverdagskrus i dansk keramik med mat glasur. Eksempelprodukt til udvikling.",
       "brand": "Studio Nordisk (DEV)",
       "category": "Bolig",
-      "tags": ["keramik", "krus", "håndlavet", "bolig", "kaffe"],
+      "tags": [
+        "keramik",
+        "krus",
+        "håndlavet",
+        "bolig",
+        "kaffe"
+      ],
       "priceDkk": 249,
       "currency": "DKK",
       "imageUrl": "https://images.unsplash.com/photo-1514228742587-6b1558fcca3d?w=800&q=80",
@@ -28,7 +34,13 @@
       "description": "Blødt merinoulds-tørklæde til kolde dage. Udviklingsdata – ikke et rigtigt tilbud.",
       "brand": "NordWeave (DEV)",
       "category": "Mode",
-      "tags": ["uld", "halstørklæde", "vinter", "mode", "merino"],
+      "tags": [
+        "uld",
+        "halstørklæde",
+        "vinter",
+        "mode",
+        "merino"
+      ],
       "priceDkk": 399,
       "currency": "DKK",
       "imageUrl": "https://images.unsplash.com/photo-1520903920243-00d872a2d1c9?w=800&q=80",
@@ -44,7 +56,13 @@
       "description": "Illustreret guide til indendørs planter. Sample feed – fictive listing.",
       "brand": "Grøn Presse (DEV)",
       "category": "Bøger",
-      "tags": ["bog", "planter", "hobby", "bolig", "grøn"],
+      "tags": [
+        "bog",
+        "planter",
+        "hobby",
+        "bolig",
+        "grøn"
+      ],
       "priceDkk": 179,
       "currency": "DKK",
       "imageUrl": "https://images.unsplash.com/photo-1544947950-fa07a98d237f?w=800&q=80",
@@ -60,7 +78,13 @@
       "description": "Kompakt LED-lygte med USB-C. Kun til GaveGenie MVP-test.",
       "brand": "TrailKit (DEV)",
       "category": "Outdoor",
-      "tags": ["camping", "lygte", "outdoor", "gadget", "rejse"],
+      "tags": [
+        "camping",
+        "lygte",
+        "outdoor",
+        "gadget",
+        "rejse"
+      ],
       "priceDkk": 329,
       "currency": "DKK",
       "imageUrl": "https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?w=800&q=80",
@@ -76,7 +100,13 @@
       "description": "Mørk og mælk blandet æske. Fiktivt produkt til udvikling.",
       "brand": "KakaoVærk (DEV)",
       "category": "Mad & drikke",
-      "tags": ["chokolade", "mad", "luksus", "gaveæske", "sød"],
+      "tags": [
+        "chokolade",
+        "mad",
+        "luksus",
+        "gaveæske",
+        "sød"
+      ],
       "priceDkk": 189,
       "currency": "DKK",
       "imageUrl": "https://images.unsplash.com/photo-1511381939415-e44015466834?w=800&q=80",
@@ -92,7 +122,13 @@
       "description": "Skridsikker korkoverflade. Udviklingssample – ikke live lager.",
       "brand": "Balance Co (DEV)",
       "category": "Sport",
-      "tags": ["yoga", "sport", "kork", "wellness", "træning"],
+      "tags": [
+        "yoga",
+        "sport",
+        "kork",
+        "wellness",
+        "træning"
+      ],
       "priceDkk": 449,
       "currency": "DKK",
       "imageUrl": "https://images.unsplash.com/photo-1601925260368-ae2f83cf8b7f?w=800&q=80",
@@ -108,7 +144,13 @@
       "description": "Håndhældt sojalys i amberglas. DEV-eksempel.",
       "brand": "Lumen Atelier (DEV)",
       "category": "Bolig",
-      "tags": ["lys", "duft", "bolig", "hygge", "soja"],
+      "tags": [
+        "lys",
+        "duft",
+        "bolig",
+        "hygge",
+        "soja"
+      ],
       "priceDkk": 159,
       "currency": "DKK",
       "imageUrl": "https://images.unsplash.com/photo-1603006905403-5bf70c9e1e8d?w=800&q=80",
@@ -124,7 +166,13 @@
       "description": "Klassisk tekande med silkesigte. Fiktiv affiliate-URL.",
       "brand": "Tetsubo (DEV)",
       "category": "Køkken",
-      "tags": ["te", "køkken", "støbejern", "ritual", "varm"],
+      "tags": [
+        "te",
+        "køkken",
+        "støbejern",
+        "ritual",
+        "varm"
+      ],
       "priceDkk": 529,
       "currency": "DKK",
       "imageUrl": "https://images.unsplash.com/photo-1571934811356-5cc061b6821f?w=800&q=80",
@@ -140,7 +188,13 @@
       "description": "500-klods sæt til voksne hobbyister. Sample only.",
       "brand": "BrickCraft (DEV)",
       "category": "Hobby",
-      "tags": ["byggesæt", "hobby", "kreativ", "gaver", "design"],
+      "tags": [
+        "byggesæt",
+        "hobby",
+        "kreativ",
+        "gaver",
+        "design"
+      ],
       "priceDkk": 599,
       "currency": "DKK",
       "imageUrl": "https://images.unsplash.com/photo-1587654780291-39c9404d746b?w=800&q=80",
@@ -156,7 +210,13 @@
       "description": "Frisk citrus og saltnote. Ikke et rigtigt produkt.",
       "brand": "Aether (DEV)",
       "category": "Skønhed",
-      "tags": ["parfume", "skønhed", "duft", "luksus", "citrus"],
+      "tags": [
+        "parfume",
+        "skønhed",
+        "duft",
+        "luksus",
+        "citrus"
+      ],
       "priceDkk": 649,
       "currency": "DKK",
       "imageUrl": "https://images.unsplash.com/photo-1541643600914-78b084683601?w=800&q=80",
@@ -172,7 +232,13 @@
       "description": "Let vandafvisende rygsæk til by og tur. DEV feed.",
       "brand": "Pathform (DEV)",
       "category": "Outdoor",
-      "tags": ["rygsæk", "rejse", "outdoor", "hverdag", "taske"],
+      "tags": [
+        "rygsæk",
+        "rejse",
+        "outdoor",
+        "hverdag",
+        "taske"
+      ],
       "priceDkk": 699,
       "currency": "DKK",
       "imageUrl": "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=800&q=80",
@@ -188,7 +254,13 @@
       "description": "Strategispil for 2–4 spillere. Fiktivt eksempel.",
       "brand": "SpilVærk (DEV)",
       "category": "Spil",
-      "tags": ["brætspil", "spil", "familie", "hyggeligt", "strategi"],
+      "tags": [
+        "brætspil",
+        "spil",
+        "familie",
+        "hyggeligt",
+        "strategi"
+      ],
       "priceDkk": 299,
       "currency": "DKK",
       "imageUrl": "https://images.unsplash.com/photo-1610890716171-6b1bb98ffd09?w=800&q=80",
@@ -197,6 +269,823 @@
       "retailerSlug": "demo-hobby",
       "retailerName": "Demo Hobby (DEV)",
       "retailerWebsite": "https://example.com/demo-hobby"
+    },
+    {
+      "externalId": "dev-gaming-mus-13",
+      "title": "Wireless gaming mus RGB",
+      "description": "Wireless gaming mus RGB. Fiktivt DEV-produkt til GaveGenie pSEO – ikke live lager.",
+      "brand": "Demo Tech Lab (DEV)",
+      "category": "Elektronik",
+      "tags": [
+        "gaming",
+        "gamer",
+        "mus",
+        "pc"
+      ],
+      "priceDkk": 279,
+      "currency": "DKK",
+      "imageUrl": "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=800&q=80",
+      "productUrl": "https://example.com/dev/gaming-mus",
+      "inStock": true,
+      "retailerSlug": "demo-tech",
+      "retailerName": "Demo Tech (DEV)",
+      "retailerWebsite": "https://example.com/demo-tech"
+    },
+    {
+      "externalId": "dev-gaming-headset-14",
+      "title": "Gaming headset 7.1 surround",
+      "description": "Gaming headset 7.1 surround. Fiktivt DEV-produkt til GaveGenie pSEO – ikke live lager.",
+      "brand": "Demo Tech Lab (DEV)",
+      "category": "Elektronik",
+      "tags": [
+        "gaming",
+        "headset",
+        "spil"
+      ],
+      "priceDkk": 449,
+      "currency": "DKK",
+      "imageUrl": "https://images.unsplash.com/photo-1601925260368-ae2f83cf8b7f?w=800&q=80",
+      "productUrl": "https://example.com/dev/gaming-headset",
+      "inStock": true,
+      "retailerSlug": "demo-tech",
+      "retailerName": "Demo Tech (DEV)",
+      "retailerWebsite": "https://example.com/demo-tech"
+    },
+    {
+      "externalId": "dev-gaming-musemåtte-15",
+      "title": "XXL gaming musemåtte",
+      "description": "XXL gaming musemåtte. Fiktivt DEV-produkt til GaveGenie pSEO – ikke live lager.",
+      "brand": "Demo Tech Lab (DEV)",
+      "category": "Elektronik",
+      "tags": [
+        "gaming",
+        "gamer",
+        "desk"
+      ],
+      "priceDkk": 129,
+      "currency": "DKK",
+      "imageUrl": "https://images.unsplash.com/photo-1514228742587-6b1558fcca3d?w=800&q=80",
+      "productUrl": "https://example.com/dev/gaming-musemåtte",
+      "inStock": true,
+      "retailerSlug": "demo-tech",
+      "retailerName": "Demo Tech (DEV)",
+      "retailerWebsite": "https://example.com/demo-tech"
+    },
+    {
+      "externalId": "dev-controller-stand-16",
+      "title": "Controller stand – sort",
+      "description": "Controller stand – sort. Fiktivt DEV-produkt til GaveGenie pSEO – ikke live lager.",
+      "brand": "Demo Tech Lab (DEV)",
+      "category": "Elektronik",
+      "tags": [
+        "gaming",
+        "playstation",
+        "xbox"
+      ],
+      "priceDkk": 199,
+      "currency": "DKK",
+      "imageUrl": "https://images.unsplash.com/photo-1541643600914-78b084683601?w=800&q=80",
+      "productUrl": "https://example.com/dev/controller-stand",
+      "inStock": true,
+      "retailerSlug": "demo-tech",
+      "retailerName": "Demo Tech (DEV)",
+      "retailerWebsite": "https://example.com/demo-tech"
+    },
+    {
+      "externalId": "dev-usb-hub-17",
+      "title": "USB-C hub 7-i-1",
+      "description": "USB-C hub 7-i-1. Fiktivt DEV-produkt til GaveGenie pSEO – ikke live lager.",
+      "brand": "Demo Tech Lab (DEV)",
+      "category": "Elektronik",
+      "tags": [
+        "tech",
+        "gadget",
+        "usb",
+        "smart"
+      ],
+      "priceDkk": 349,
+      "currency": "DKK",
+      "imageUrl": "https://images.unsplash.com/photo-1610890716171-6b1bb98ffd09?w=800&q=80",
+      "productUrl": "https://example.com/dev/usb-hub",
+      "inStock": true,
+      "retailerSlug": "demo-tech",
+      "retailerName": "Demo Tech (DEV)",
+      "retailerWebsite": "https://example.com/demo-tech"
+    },
+    {
+      "externalId": "dev-powerbank-18",
+      "title": "Powerbank 20.000 mAh",
+      "description": "Powerbank 20.000 mAh. Fiktivt DEV-produkt til GaveGenie pSEO – ikke live lager.",
+      "brand": "Demo Tech Lab (DEV)",
+      "category": "Elektronik",
+      "tags": [
+        "tech",
+        "gadget",
+        "batteri",
+        "rejse"
+      ],
+      "priceDkk": 299,
+      "currency": "DKK",
+      "imageUrl": "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=800&q=80",
+      "productUrl": "https://example.com/dev/powerbank",
+      "inStock": true,
+      "retailerSlug": "demo-tech",
+      "retailerName": "Demo Tech (DEV)",
+      "retailerWebsite": "https://example.com/demo-tech"
+    },
+    {
+      "externalId": "dev-ørepropper-19",
+      "title": "Trådløse ørepropper ANC",
+      "description": "Trådløse ørepropper ANC. Fiktivt DEV-produkt til GaveGenie pSEO – ikke live lager.",
+      "brand": "Demo Tech Lab (DEV)",
+      "category": "Elektronik",
+      "tags": [
+        "høretelefon",
+        "tech",
+        "gadget"
+      ],
+      "priceDkk": 599,
+      "currency": "DKK",
+      "imageUrl": "https://images.unsplash.com/photo-1601925260368-ae2f83cf8b7f?w=800&q=80",
+      "productUrl": "https://example.com/dev/ørepropper",
+      "inStock": true,
+      "retailerSlug": "demo-tech",
+      "retailerName": "Demo Tech (DEV)",
+      "retailerWebsite": "https://example.com/demo-tech"
+    },
+    {
+      "externalId": "dev-kaffe-kværn-20",
+      "title": "Manuel kaffekværn stål",
+      "description": "Manuel kaffekværn stål. Fiktivt DEV-produkt til GaveGenie pSEO – ikke live lager.",
+      "brand": "Demo Deli Lab (DEV)",
+      "category": "Køkken",
+      "tags": [
+        "kaffe",
+        "mad",
+        "køkken"
+      ],
+      "priceDkk": 259,
+      "currency": "DKK",
+      "imageUrl": "https://images.unsplash.com/photo-1514228742587-6b1558fcca3d?w=800&q=80",
+      "productUrl": "https://example.com/dev/kaffe-kværn",
+      "inStock": true,
+      "retailerSlug": "demo-deli",
+      "retailerName": "Demo Deli (DEV)",
+      "retailerWebsite": "https://example.com/demo-deli"
+    },
+    {
+      "externalId": "dev-olivenolie-21",
+      "title": "Extra virgin olivenolie gaveæske",
+      "description": "Extra virgin olivenolie gaveæske. Fiktivt DEV-produkt til GaveGenie pSEO – ikke live lager.",
+      "brand": "Demo Deli Lab (DEV)",
+      "category": "Mad & drikke",
+      "tags": [
+        "mad",
+        "gourmet",
+        "gaveæske",
+        "jul"
+      ],
+      "priceDkk": 189,
+      "currency": "DKK",
+      "imageUrl": "https://images.unsplash.com/photo-1541643600914-78b084683601?w=800&q=80",
+      "productUrl": "https://example.com/dev/olivenolie",
+      "inStock": true,
+      "retailerSlug": "demo-deli",
+      "retailerName": "Demo Deli (DEV)",
+      "retailerWebsite": "https://example.com/demo-deli"
+    },
+    {
+      "externalId": "dev-te-smage-22",
+      "title": "Tesmagningssæt 12 sorter",
+      "description": "Tesmagningssæt 12 sorter. Fiktivt DEV-produkt til GaveGenie pSEO – ikke live lager.",
+      "brand": "Demo Deli Lab (DEV)",
+      "category": "Mad & drikke",
+      "tags": [
+        "te",
+        "mad",
+        "ritual"
+      ],
+      "priceDkk": 219,
+      "currency": "DKK",
+      "imageUrl": "https://images.unsplash.com/photo-1610890716171-6b1bb98ffd09?w=800&q=80",
+      "productUrl": "https://example.com/dev/te-smage",
+      "inStock": true,
+      "retailerSlug": "demo-deli",
+      "retailerName": "Demo Deli (DEV)",
+      "retailerWebsite": "https://example.com/demo-deli"
+    },
+    {
+      "externalId": "dev-kokkekniv-23",
+      "title": "Kokkekniv 20 cm",
+      "description": "Kokkekniv 20 cm. Fiktivt DEV-produkt til GaveGenie pSEO – ikke live lager.",
+      "brand": "Demo Køkken Lab (DEV)",
+      "category": "Køkken",
+      "tags": [
+        "køkken",
+        "kok",
+        "mad"
+      ],
+      "priceDkk": 479,
+      "currency": "DKK",
+      "imageUrl": "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=800&q=80",
+      "productUrl": "https://example.com/dev/kokkekniv",
+      "inStock": true,
+      "retailerSlug": "demo-koekken",
+      "retailerName": "Demo Køkken (DEV)",
+      "retailerWebsite": "https://example.com/demo-koekken"
+    },
+    {
+      "externalId": "dev-krydderi-saet-24",
+      "title": "Krydderisæt – verden rundt",
+      "description": "Krydderisæt – verden rundt. Fiktivt DEV-produkt til GaveGenie pSEO – ikke live lager.",
+      "brand": "Demo Deli Lab (DEV)",
+      "category": "Mad & drikke",
+      "tags": [
+        "krydderi",
+        "mad",
+        "gourmet"
+      ],
+      "priceDkk": 159,
+      "currency": "DKK",
+      "imageUrl": "https://images.unsplash.com/photo-1601925260368-ae2f83cf8b7f?w=800&q=80",
+      "productUrl": "https://example.com/dev/krydderi-saet",
+      "inStock": true,
+      "retailerSlug": "demo-deli",
+      "retailerName": "Demo Deli (DEV)",
+      "retailerWebsite": "https://example.com/demo-deli"
+    },
+    {
+      "externalId": "dev-løbesko-gavekort-25",
+      "title": "Sportsgave – flaskeholder",
+      "description": "Sportsgave – flaskeholder. Fiktivt DEV-produkt til GaveGenie pSEO – ikke live lager.",
+      "brand": "Demo Sport Lab (DEV)",
+      "category": "Sport",
+      "tags": [
+        "løb",
+        "sport",
+        "fitness",
+        "træning"
+      ],
+      "priceDkk": 149,
+      "currency": "DKK",
+      "imageUrl": "https://images.unsplash.com/photo-1514228742587-6b1558fcca3d?w=800&q=80",
+      "productUrl": "https://example.com/dev/løbesko-gavekort",
+      "inStock": true,
+      "retailerSlug": "demo-sport",
+      "retailerName": "Demo Sport (DEV)",
+      "retailerWebsite": "https://example.com/demo-sport"
+    },
+    {
+      "externalId": "dev-modstandsbånd-26",
+      "title": "Modstandsbånd sæt 5 stk",
+      "description": "Modstandsbånd sæt 5 stk. Fiktivt DEV-produkt til GaveGenie pSEO – ikke live lager.",
+      "brand": "Demo Sport Lab (DEV)",
+      "category": "Sport",
+      "tags": [
+        "fitness",
+        "træning",
+        "workout",
+        "gym"
+      ],
+      "priceDkk": 179,
+      "currency": "DKK",
+      "imageUrl": "https://images.unsplash.com/photo-1541643600914-78b084683601?w=800&q=80",
+      "productUrl": "https://example.com/dev/modstandsbånd",
+      "inStock": true,
+      "retailerSlug": "demo-sport",
+      "retailerName": "Demo Sport (DEV)",
+      "retailerWebsite": "https://example.com/demo-sport"
+    },
+    {
+      "externalId": "dev-foam-roller-27",
+      "title": "Foam roller til restitution",
+      "description": "Foam roller til restitution. Fiktivt DEV-produkt til GaveGenie pSEO – ikke live lager.",
+      "brand": "Demo Sport Lab (DEV)",
+      "category": "Sport",
+      "tags": [
+        "fitness",
+        "sport",
+        "wellness"
+      ],
+      "priceDkk": 229,
+      "currency": "DKK",
+      "imageUrl": "https://images.unsplash.com/photo-1610890716171-6b1bb98ffd09?w=800&q=80",
+      "productUrl": "https://example.com/dev/foam-roller",
+      "inStock": true,
+      "retailerSlug": "demo-sport",
+      "retailerName": "Demo Sport (DEV)",
+      "retailerWebsite": "https://example.com/demo-sport"
+    },
+    {
+      "externalId": "dev-ansigtscreme-28",
+      "title": "Ansigtscreme hyaluron 50 ml",
+      "description": "Ansigtscreme hyaluron 50 ml. Fiktivt DEV-produkt til GaveGenie pSEO – ikke live lager.",
+      "brand": "Demo Skønhed Lab (DEV)",
+      "category": "Skønhed",
+      "tags": [
+        "hudpleje",
+        "skønhed",
+        "creme"
+      ],
+      "priceDkk": 269,
+      "currency": "DKK",
+      "imageUrl": "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=800&q=80",
+      "productUrl": "https://example.com/dev/ansigtscreme",
+      "inStock": true,
+      "retailerSlug": "demo-skoenhed",
+      "retailerName": "Demo Skønhed (DEV)",
+      "retailerWebsite": "https://example.com/demo-skoenhed"
+    },
+    {
+      "externalId": "dev-kropsolie-29",
+      "title": "Kropsolie – mandel & jasmin",
+      "description": "Kropsolie – mandel & jasmin. Fiktivt DEV-produkt til GaveGenie pSEO – ikke live lager.",
+      "brand": "Demo Skønhed Lab (DEV)",
+      "category": "Skønhed",
+      "tags": [
+        "skønhed",
+        "spa",
+        "duft"
+      ],
+      "priceDkk": 199,
+      "currency": "DKK",
+      "imageUrl": "https://images.unsplash.com/photo-1601925260368-ae2f83cf8b7f?w=800&q=80",
+      "productUrl": "https://example.com/dev/kropsolie",
+      "inStock": true,
+      "retailerSlug": "demo-skoenhed",
+      "retailerName": "Demo Skønhed (DEV)",
+      "retailerWebsite": "https://example.com/demo-skoenhed"
+    },
+    {
+      "externalId": "dev-læbepomade-saet-30",
+      "title": "Læbepomade sæt 3 stk",
+      "description": "Læbepomade sæt 3 stk. Fiktivt DEV-produkt til GaveGenie pSEO – ikke live lager.",
+      "brand": "Demo Skønhed Lab (DEV)",
+      "category": "Skønhed",
+      "tags": [
+        "skønhed",
+        "makeup",
+        "beauty"
+      ],
+      "priceDkk": 99,
+      "currency": "DKK",
+      "imageUrl": "https://images.unsplash.com/photo-1514228742587-6b1558fcca3d?w=800&q=80",
+      "productUrl": "https://example.com/dev/læbepomade-saet",
+      "inStock": true,
+      "retailerSlug": "demo-skoenhed",
+      "retailerName": "Demo Skønhed (DEV)",
+      "retailerWebsite": "https://example.com/demo-skoenhed"
+    },
+    {
+      "externalId": "dev-roman-gave-31",
+      "title": "Bestseller-roman – indbundet",
+      "description": "Bestseller-roman – indbundet. Fiktivt DEV-produkt til GaveGenie pSEO – ikke live lager.",
+      "brand": "Demo Boghandel Lab (DEV)",
+      "category": "Bøger",
+      "tags": [
+        "bog",
+        "roman",
+        "læs"
+      ],
+      "priceDkk": 199,
+      "currency": "DKK",
+      "imageUrl": "https://images.unsplash.com/photo-1541643600914-78b084683601?w=800&q=80",
+      "productUrl": "https://example.com/dev/roman-gave",
+      "inStock": true,
+      "retailerSlug": "demo-bog",
+      "retailerName": "Demo Boghandel (DEV)",
+      "retailerWebsite": "https://example.com/demo-bog"
+    },
+    {
+      "externalId": "dev-kogebog-32",
+      "title": "Kogebog – hverdagsgourmet",
+      "description": "Kogebog – hverdagsgourmet. Fiktivt DEV-produkt til GaveGenie pSEO – ikke live lager.",
+      "brand": "Demo Boghandel Lab (DEV)",
+      "category": "Bøger",
+      "tags": [
+        "bog",
+        "mad",
+        "kok"
+      ],
+      "priceDkk": 249,
+      "currency": "DKK",
+      "imageUrl": "https://images.unsplash.com/photo-1610890716171-6b1bb98ffd09?w=800&q=80",
+      "productUrl": "https://example.com/dev/kogebog",
+      "inStock": true,
+      "retailerSlug": "demo-bog",
+      "retailerName": "Demo Boghandel (DEV)",
+      "retailerWebsite": "https://example.com/demo-bog"
+    },
+    {
+      "externalId": "dev-notesbog-33",
+      "title": "Lædernotesbog A5",
+      "description": "Lædernotesbog A5. Fiktivt DEV-produkt til GaveGenie pSEO – ikke live lager.",
+      "brand": "Demo Bolig Lab (DEV)",
+      "category": "Bolig",
+      "tags": [
+        "bog",
+        "kontor",
+        "kollega"
+      ],
+      "priceDkk": 179,
+      "currency": "DKK",
+      "imageUrl": "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=800&q=80",
+      "productUrl": "https://example.com/dev/notesbog",
+      "inStock": true,
+      "retailerSlug": "demo-bolig",
+      "retailerName": "Demo Bolig (DEV)",
+      "retailerWebsite": "https://example.com/demo-bolig"
+    },
+    {
+      "externalId": "dev-vase-34",
+      "title": "Keramikvase – sand",
+      "description": "Keramikvase – sand. Fiktivt DEV-produkt til GaveGenie pSEO – ikke live lager.",
+      "brand": "Demo Bolig Lab (DEV)",
+      "category": "Bolig",
+      "tags": [
+        "bolig",
+        "keramik",
+        "dekor",
+        "hjem"
+      ],
+      "priceDkk": 289,
+      "currency": "DKK",
+      "imageUrl": "https://images.unsplash.com/photo-1601925260368-ae2f83cf8b7f?w=800&q=80",
+      "productUrl": "https://example.com/dev/vase",
+      "inStock": true,
+      "retailerSlug": "demo-bolig",
+      "retailerName": "Demo Bolig (DEV)",
+      "retailerWebsite": "https://example.com/demo-bolig"
+    },
+    {
+      "externalId": "dev-plaid-35",
+      "title": "Uldplaid – grå",
+      "description": "Uldplaid – grå. Fiktivt DEV-produkt til GaveGenie pSEO – ikke live lager.",
+      "brand": "Demo Bolig Lab (DEV)",
+      "category": "Bolig",
+      "tags": [
+        "bolig",
+        "hygge",
+        "hjem"
+      ],
+      "priceDkk": 399,
+      "currency": "DKK",
+      "imageUrl": "https://images.unsplash.com/photo-1514228742587-6b1558fcca3d?w=800&q=80",
+      "productUrl": "https://example.com/dev/plaid",
+      "inStock": true,
+      "retailerSlug": "demo-bolig",
+      "retailerName": "Demo Bolig (DEV)",
+      "retailerWebsite": "https://example.com/demo-bolig"
+    },
+    {
+      "externalId": "dev-diffuser-36",
+      "title": "Duft Diffuser – skov",
+      "description": "Duft Diffuser – skov. Fiktivt DEV-produkt til GaveGenie pSEO – ikke live lager.",
+      "brand": "Demo Bolig Lab (DEV)",
+      "category": "Bolig",
+      "tags": [
+        "lys",
+        "duft",
+        "bolig",
+        "hygge"
+      ],
+      "priceDkk": 219,
+      "currency": "DKK",
+      "imageUrl": "https://images.unsplash.com/photo-1541643600914-78b084683601?w=800&q=80",
+      "productUrl": "https://example.com/dev/diffuser",
+      "inStock": true,
+      "retailerSlug": "demo-bolig",
+      "retailerName": "Demo Bolig (DEV)",
+      "retailerWebsite": "https://example.com/demo-bolig"
+    },
+    {
+      "externalId": "dev-vandrerygsack-37",
+      "title": "Vandrerygsæk 30 L",
+      "description": "Vandrerygsæk 30 L. Fiktivt DEV-produkt til GaveGenie pSEO – ikke live lager.",
+      "brand": "Demo Outdoor Lab (DEV)",
+      "category": "Outdoor",
+      "tags": [
+        "outdoor",
+        "vandring",
+        "rygsæk",
+        "natur"
+      ],
+      "priceDkk": 799,
+      "currency": "DKK",
+      "imageUrl": "https://images.unsplash.com/photo-1610890716171-6b1bb98ffd09?w=800&q=80",
+      "productUrl": "https://example.com/dev/vandrerygsack",
+      "inStock": true,
+      "retailerSlug": "demo-outdoor",
+      "retailerName": "Demo Outdoor (DEV)",
+      "retailerWebsite": "https://example.com/demo-outdoor"
+    },
+    {
+      "externalId": "dev-termoflaske-38",
+      "title": "Termoflaske 750 ml",
+      "description": "Termoflaske 750 ml. Fiktivt DEV-produkt til GaveGenie pSEO – ikke live lager.",
+      "brand": "Demo Outdoor Lab (DEV)",
+      "category": "Outdoor",
+      "tags": [
+        "outdoor",
+        "rejse",
+        "friluft"
+      ],
+      "priceDkk": 249,
+      "currency": "DKK",
+      "imageUrl": "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=800&q=80",
+      "productUrl": "https://example.com/dev/termoflaske",
+      "inStock": true,
+      "retailerSlug": "demo-outdoor",
+      "retailerName": "Demo Outdoor (DEV)",
+      "retailerWebsite": "https://example.com/demo-outdoor"
+    },
+    {
+      "externalId": "dev-multitool-39",
+      "title": "Multitool rustfrit stål",
+      "description": "Multitool rustfrit stål. Fiktivt DEV-produkt til GaveGenie pSEO – ikke live lager.",
+      "brand": "Demo Outdoor Lab (DEV)",
+      "category": "Outdoor",
+      "tags": [
+        "outdoor",
+        "gadget",
+        "camping"
+      ],
+      "priceDkk": 329,
+      "currency": "DKK",
+      "imageUrl": "https://images.unsplash.com/photo-1601925260368-ae2f83cf8b7f?w=800&q=80",
+      "productUrl": "https://example.com/dev/multitool",
+      "inStock": true,
+      "retailerSlug": "demo-outdoor",
+      "retailerName": "Demo Outdoor (DEV)",
+      "retailerWebsite": "https://example.com/demo-outdoor"
+    },
+    {
+      "externalId": "dev-herreur-40",
+      "title": "Herreur mesh-rem",
+      "description": "Herreur mesh-rem. Fiktivt DEV-produkt til GaveGenie pSEO – ikke live lager.",
+      "brand": "Demo Mode Lab (DEV)",
+      "category": "Mode",
+      "tags": [
+        "herre",
+        "mand",
+        "ur"
+      ],
+      "priceDkk": 549,
+      "currency": "DKK",
+      "imageUrl": "https://images.unsplash.com/photo-1514228742587-6b1558fcca3d?w=800&q=80",
+      "productUrl": "https://example.com/dev/herreur",
+      "inStock": true,
+      "retailerSlug": "demo-mode",
+      "retailerName": "Demo Mode (DEV)",
+      "retailerWebsite": "https://example.com/demo-mode"
+    },
+    {
+      "externalId": "dev-dame-smykke-41",
+      "title": "Damesmykke – sølvarmbånd",
+      "description": "Damesmykke – sølvarmbånd. Fiktivt DEV-produkt til GaveGenie pSEO – ikke live lager.",
+      "brand": "Demo Mode Lab (DEV)",
+      "category": "Mode",
+      "tags": [
+        "dame",
+        "kvinde",
+        "smykke"
+      ],
+      "priceDkk": 349,
+      "currency": "DKK",
+      "imageUrl": "https://images.unsplash.com/photo-1541643600914-78b084683601?w=800&q=80",
+      "productUrl": "https://example.com/dev/dame-smykke",
+      "inStock": true,
+      "retailerSlug": "demo-mode",
+      "retailerName": "Demo Mode (DEV)",
+      "retailerWebsite": "https://example.com/demo-mode"
+    },
+    {
+      "externalId": "dev-par-vinsæt-42",
+      "title": "Parvin-sæt 2 glas",
+      "description": "Parvin-sæt 2 glas. Fiktivt DEV-produkt til GaveGenie pSEO – ikke live lager.",
+      "brand": "Demo Deli Lab (DEV)",
+      "category": "Mad & drikke",
+      "tags": [
+        "par",
+        "vin",
+        "fælles",
+        "bryllup"
+      ],
+      "priceDkk": 299,
+      "currency": "DKK",
+      "imageUrl": "https://images.unsplash.com/photo-1610890716171-6b1bb98ffd09?w=800&q=80",
+      "productUrl": "https://example.com/dev/par-vinsæt",
+      "inStock": true,
+      "retailerSlug": "demo-deli",
+      "retailerName": "Demo Deli (DEV)",
+      "retailerWebsite": "https://example.com/demo-deli"
+    },
+    {
+      "externalId": "dev-børne-puslespil-43",
+      "title": "Børnepuslespil 100 brikker",
+      "description": "Børnepuslespil 100 brikker. Fiktivt DEV-produkt til GaveGenie pSEO – ikke live lager.",
+      "brand": "Demo Hobby Lab (DEV)",
+      "category": "Legetøj",
+      "tags": [
+        "barn",
+        "børn",
+        "legetøj",
+        "spil"
+      ],
+      "priceDkk": 129,
+      "currency": "DKK",
+      "imageUrl": "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=800&q=80",
+      "productUrl": "https://example.com/dev/børne-puslespil",
+      "inStock": true,
+      "retailerSlug": "demo-hobby",
+      "retailerName": "Demo Hobby (DEV)",
+      "retailerWebsite": "https://example.com/demo-hobby"
+    },
+    {
+      "externalId": "dev-teen-hoddie-44",
+      "title": "Teen hoodie – oversized",
+      "description": "Teen hoodie – oversized. Fiktivt DEV-produkt til GaveGenie pSEO – ikke live lager.",
+      "brand": "Demo Mode Lab (DEV)",
+      "category": "Mode",
+      "tags": [
+        "teen",
+        "ungdom",
+        "mode"
+      ],
+      "priceDkk": 399,
+      "currency": "DKK",
+      "imageUrl": "https://images.unsplash.com/photo-1601925260368-ae2f83cf8b7f?w=800&q=80",
+      "productUrl": "https://example.com/dev/teen-hoddie",
+      "inStock": true,
+      "retailerSlug": "demo-mode",
+      "retailerName": "Demo Mode (DEV)",
+      "retailerWebsite": "https://example.com/demo-mode"
+    },
+    {
+      "externalId": "dev-kontor-organizer-45",
+      "title": "Skrivebordsorganizer",
+      "description": "Skrivebordsorganizer. Fiktivt DEV-produkt til GaveGenie pSEO – ikke live lager.",
+      "brand": "Demo Bolig Lab (DEV)",
+      "category": "Kontor",
+      "tags": [
+        "kollega",
+        "kontor",
+        "desk",
+        "office"
+      ],
+      "priceDkk": 189,
+      "currency": "DKK",
+      "imageUrl": "https://images.unsplash.com/photo-1514228742587-6b1558fcca3d?w=800&q=80",
+      "productUrl": "https://example.com/dev/kontor-organizer",
+      "inStock": true,
+      "retailerSlug": "demo-bolig",
+      "retailerName": "Demo Bolig (DEV)",
+      "retailerWebsite": "https://example.com/demo-bolig"
+    },
+    {
+      "externalId": "dev-julekalender-46",
+      "title": "Chokoladejulekalender gourmet",
+      "description": "Chokoladejulekalender gourmet. Fiktivt DEV-produkt til GaveGenie pSEO – ikke live lager.",
+      "brand": "Demo Deli Lab (DEV)",
+      "category": "Mad & drikke",
+      "tags": [
+        "jul",
+        "chokolade",
+        "gaveæske",
+        "advent"
+      ],
+      "priceDkk": 249,
+      "currency": "DKK",
+      "imageUrl": "https://images.unsplash.com/photo-1541643600914-78b084683601?w=800&q=80",
+      "productUrl": "https://example.com/dev/julekalender",
+      "inStock": true,
+      "retailerSlug": "demo-deli",
+      "retailerName": "Demo Deli (DEV)",
+      "retailerWebsite": "https://example.com/demo-deli"
+    },
+    {
+      "externalId": "dev-konfirmand-ur-47",
+      "title": "Ur til konfirmanden",
+      "description": "Ur til konfirmanden. Fiktivt DEV-produkt til GaveGenie pSEO – ikke live lager.",
+      "brand": "Demo Mode Lab (DEV)",
+      "category": "Mode",
+      "tags": [
+        "konfirmation",
+        "teen",
+        "ur"
+      ],
+      "priceDkk": 699,
+      "currency": "DKK",
+      "imageUrl": "https://images.unsplash.com/photo-1610890716171-6b1bb98ffd09?w=800&q=80",
+      "productUrl": "https://example.com/dev/konfirmand-ur",
+      "inStock": true,
+      "retailerSlug": "demo-mode",
+      "retailerName": "Demo Mode (DEV)",
+      "retailerWebsite": "https://example.com/demo-mode"
+    },
+    {
+      "externalId": "dev-hostegave-vin-48",
+      "title": "Hostegave – vin & chokolade",
+      "description": "Hostegave – vin & chokolade. Fiktivt DEV-produkt til GaveGenie pSEO – ikke live lager.",
+      "brand": "Demo Deli Lab (DEV)",
+      "category": "Mad & drikke",
+      "tags": [
+        "hoste",
+        "vin",
+        "chokolade",
+        "tak"
+      ],
+      "priceDkk": 279,
+      "currency": "DKK",
+      "imageUrl": "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=800&q=80",
+      "productUrl": "https://example.com/dev/hostegave-vin",
+      "inStock": true,
+      "retailerSlug": "demo-deli",
+      "retailerName": "Demo Deli (DEV)",
+      "retailerWebsite": "https://example.com/demo-deli"
+    },
+    {
+      "externalId": "dev-brætspil-2-49",
+      "title": "Brætspil – kooperativt eventyr",
+      "description": "Brætspil – kooperativt eventyr. Fiktivt DEV-produkt til GaveGenie pSEO – ikke live lager.",
+      "brand": "Demo Hobby Lab (DEV)",
+      "category": "Spil",
+      "tags": [
+        "brætspil",
+        "spil",
+        "gaming",
+        "familie"
+      ],
+      "priceDkk": 349,
+      "currency": "DKK",
+      "imageUrl": "https://images.unsplash.com/photo-1601925260368-ae2f83cf8b7f?w=800&q=80",
+      "productUrl": "https://example.com/dev/brætspil-2",
+      "inStock": true,
+      "retailerSlug": "demo-hobby",
+      "retailerName": "Demo Hobby (DEV)",
+      "retailerWebsite": "https://example.com/demo-hobby"
+    },
+    {
+      "externalId": "dev-lego-2-50",
+      "title": "Byggesæt – racerbil",
+      "description": "Byggesæt – racerbil. Fiktivt DEV-produkt til GaveGenie pSEO – ikke live lager.",
+      "brand": "Demo Hobby Lab (DEV)",
+      "category": "Hobby",
+      "tags": [
+        "byggesæt",
+        "hobby",
+        "gaming",
+        "kreativ"
+      ],
+      "priceDkk": 449,
+      "currency": "DKK",
+      "imageUrl": "https://images.unsplash.com/photo-1514228742587-6b1558fcca3d?w=800&q=80",
+      "productUrl": "https://example.com/dev/lego-2",
+      "inStock": true,
+      "retailerSlug": "demo-hobby",
+      "retailerName": "Demo Hobby (DEV)",
+      "retailerWebsite": "https://example.com/demo-hobby"
+    },
+    {
+      "externalId": "dev-fitness-flaske-51",
+      "title": "Shaker bottle 700 ml",
+      "description": "Shaker bottle 700 ml. Fiktivt DEV-produkt til GaveGenie pSEO – ikke live lager.",
+      "brand": "Demo Sport Lab (DEV)",
+      "category": "Sport",
+      "tags": [
+        "fitness",
+        "gym",
+        "træning"
+      ],
+      "priceDkk": 89,
+      "currency": "DKK",
+      "imageUrl": "https://images.unsplash.com/photo-1541643600914-78b084683601?w=800&q=80",
+      "productUrl": "https://example.com/dev/fitness-flaske",
+      "inStock": true,
+      "retailerSlug": "demo-sport",
+      "retailerName": "Demo Sport (DEV)",
+      "retailerWebsite": "https://example.com/demo-sport"
+    },
+    {
+      "externalId": "dev-bog-sci-fi-52",
+      "title": "Sci-fi romantrilogi box",
+      "description": "Sci-fi romantrilogi box. Fiktivt DEV-produkt til GaveGenie pSEO – ikke live lager.",
+      "brand": "Demo Boghandel Lab (DEV)",
+      "category": "Bøger",
+      "tags": [
+        "bog",
+        "roman",
+        "læs",
+        "gave"
+      ],
+      "priceDkk": 299,
+      "currency": "DKK",
+      "imageUrl": "https://images.unsplash.com/photo-1610890716171-6b1bb98ffd09?w=800&q=80",
+      "productUrl": "https://example.com/dev/bog-sci-fi",
+      "inStock": true,
+      "retailerSlug": "demo-bog",
+      "retailerName": "Demo Boghandel (DEV)",
+      "retailerWebsite": "https://example.com/demo-bog"
     }
   ]
 }

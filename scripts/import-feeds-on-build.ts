@@ -14,6 +14,7 @@ import {
 } from "../src/lib/feeds/partner-ads-registry";
 import { importPartnerAdsFeed } from "../src/lib/feeds/partner-ads-import";
 import { prisma } from "../src/lib/db";
+import { syncSeoLandings } from "../src/lib/pseo/landings";
 
 /** Feed ids known to be very large — import after smaller shops. */
 const LARGE_FEED_IDS = new Set(["4330", "522", "2767"]);
@@ -94,6 +95,21 @@ async function main() {
     }
   }
 
+  let seo: { upserted: number; indexed: number } | null = null;
+  if (imported > 0 && Date.now() - started < budget) {
+    try {
+      seo = await syncSeoLandings();
+      console.log(
+        `[import-feeds-on-build] seo landings: upserted=${seo.upserted} indexed=${seo.indexed}`,
+      );
+    } catch (error) {
+      console.error(
+        "[import-feeds-on-build] seo sync failed (ignored):",
+        error instanceof Error ? error.message : error,
+      );
+    }
+  }
+
   console.log(
     JSON.stringify(
       {
@@ -101,6 +117,7 @@ async function main() {
         skipped,
         failed,
         deferred,
+        seo,
         elapsedMs: Date.now() - started,
       },
       null,
