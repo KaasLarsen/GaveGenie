@@ -43,15 +43,26 @@ export async function generateMetadata({
     return { title: "Side ikke fundet", robots: { index: false, follow: false } };
   }
 
-  const landing = await getIndexedLanding(resolved.slug);
-  const stats = landing
-    ? {
-        productCount: landing.productCount,
-        minPriceOre: landing.minPriceOre,
-        maxPriceOre: landing.maxPriceOre,
-        topCategories: [] as string[],
-      }
-    : await aggregateLandingStats(resolved.filters);
+  let landing: Awaited<ReturnType<typeof getIndexedLanding>> = null;
+  let stats = {
+    productCount: 0,
+    minPriceOre: null as number | null,
+    maxPriceOre: null as number | null,
+    topCategories: [] as string[],
+  };
+  try {
+    landing = await getIndexedLanding(resolved.slug);
+    stats = landing
+      ? {
+          productCount: landing.productCount,
+          minPriceOre: landing.minPriceOre,
+          maxPriceOre: landing.maxPriceOre,
+          topCategories: [] as string[],
+        }
+      : await aggregateLandingStats(resolved.filters);
+  } catch {
+    // Build/ISR without reachable DB — still emit noindex metadata.
+  }
 
   const indexed =
     (landing?.indexed ?? false) || stats.productCount >= SEO_MIN_PRODUCTS;

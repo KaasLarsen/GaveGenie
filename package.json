@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "prisma migrate deploy && prisma generate && tsx scripts/ensure-seo-on-build.ts && next build",
+    "build": "bash scripts/vercel-build.sh",
     "start": "next start",
     "lint": "eslint .",
     "test": "vitest run",

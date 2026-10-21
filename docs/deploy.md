@@ -8,7 +8,7 @@
    - `OPENAI_API_KEY`
    - `ADMIN_SECRET`
    - `NEXT_PUBLIC_SITE_URL` — production URL (fx `https://gavegenie.dk`)
-3. Build command (allerede i `npm run build`): `prisma migrate deploy` → `ensure-seo-on-build` (hurtig SEO-tag backfill + landing sync, max ~45s, fejler aldrig build) → `next build`. Partner Ads-download kører **ikke** i build (det blokerede deploys).
+3. Build command (allerede i `npm run build` → `scripts/vercel-build.sh`): `prisma migrate deploy` (max 60s) → `ensure-seo-on-build` (max ~45s) → `next build`. Hårde timeouts så hung DB/migrate ikke blokerer Vercel-køen. Partner Ads-download kører **ikke** i build.
 4. Partner Ads-import: Vercel Cron (`vercel.json`) kalder `/api/cron/import-feeds` dagligt. Cron retagger også produkter uden `seo:*` tags, så `/gaver`-menuen får indhold uden force-refresh. Sæt env `CRON_SECRET` i Vercel — Cron sender den automatisk som Bearer. `ADMIN_SECRET` virker også til manuel trigger:
 
 ```bash
