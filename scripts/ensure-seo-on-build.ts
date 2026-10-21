@@ -38,9 +38,11 @@ async function main() {
   );
 
   let finished = false;
+  // Force rewrite so tightened ham/hende matchers replace poisoned tags.
   const work = retagProductsMissingSeoTags({
     batchSize: 75,
-    maxProducts: 1_500,
+    maxProducts: 2_500,
+    force: true,
   })
     .then((result) => {
       finished = true;

@@ -52,6 +52,10 @@ export function productWhereForFilters(
   if (filters.budgetMaxOre != null) {
     where.priceOre = { lte: filters.budgetMaxOre };
   }
+  // Adult recipient hubs must not surface children's products.
+  if (filters.recipientId === "ham" || filters.recipientId === "hende") {
+    where.NOT = { tags: { has: recipientSeoTag("barn") } };
+  }
   return where;
 }
 
@@ -66,8 +70,12 @@ export async function fetchLandingProducts(
   limit = 24,
 ): Promise<SeoProductRow[]> {
   const rows = await prisma.product.findMany({
-    where: productWhereForFilters(filters),
-    orderBy: [{ priceOre: "asc" }, { title: "asc" }],
+    where: {
+      ...productWhereForFilters(filters),
+      isSample: false,
+    },
+    // Prefer in-stock specialty gifts over cheapest mass-market filler.
+    orderBy: [{ inStock: "desc" }, { priceOre: "desc" }, { title: "asc" }],
     take: limit,
     include: { retailer: { select: { name: true } } },
   });

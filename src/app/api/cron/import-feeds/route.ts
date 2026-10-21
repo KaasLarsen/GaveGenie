@@ -83,12 +83,13 @@ async function handle(request: Request) {
       null;
     let seo: { upserted: number; indexed: number } | null = null;
 
-    // Backfill seo:* tags on existing catalog (e.g. after pSEO deploy) even when
-    // Partner Ads TTL skips every feed — otherwise /gaver hubs stay empty.
+    // Rewrite seo:* tags (force) so matcher fixes reach production without
+    // waiting for Partner Ads TTL — otherwise poisoned ham/hende tags linger.
     if (Date.now() - started < TIME_BUDGET_MS) {
       retag = await retagProductsMissingSeoTags({
         batchSize: 100,
-        maxProducts: 3_000,
+        maxProducts: 4_000,
+        force: true,
       });
       seo = retag.seo;
     }

@@ -16,7 +16,7 @@ import {
 } from "@/lib/pseo/landings";
 import { resolveSlug } from "@/lib/pseo/slug";
 
-export const revalidate = 3600;
+export const revalidate = 300;
 
 type PageProps = {
   params: Promise<{ slug: string[] }>;

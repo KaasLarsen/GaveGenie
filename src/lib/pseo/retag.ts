@@ -11,20 +11,19 @@ export type RetagResult = {
   seo: SyncLandingsResult | null;
 };
 
-function rowNeedsSeoRetag(tags: string[]): boolean {
-  return !tags.some((t) => t.startsWith(SEO_TAG_PREFIX));
-}
-
 /**
- * Re-apply taxonomy SEO tags to products that still lack `seo:*` tags.
- * Used after deploying pSEO without forcing a full Partner Ads re-download.
+ * Re-apply taxonomy SEO tags to catalog rows.
+ * Default: only rows still missing `seo:*` tags.
+ * `force: true` rewrites every product (needed after matcher tightening).
  */
 export async function retagProductsMissingSeoTags(options?: {
   batchSize?: number;
   maxProducts?: number;
+  force?: boolean;
 }): Promise<RetagResult> {
   const batchSize = options?.batchSize ?? 100;
   const maxProducts = options?.maxProducts ?? 2_000;
+  const force = Boolean(options?.force);
 
   let scanned = 0;
   let updated = 0;
@@ -60,7 +59,7 @@ export async function retagProductsMissingSeoTags(options?: {
     scanned += rows.length;
 
     for (const row of rows) {
-      if (!rowNeedsSeoRetag(row.tags)) {
+      if (!force && row.tags.some((t) => t.startsWith(SEO_TAG_PREFIX))) {
         skipped += 1;
         continue;
       }

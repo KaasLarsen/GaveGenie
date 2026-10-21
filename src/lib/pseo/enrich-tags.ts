@@ -30,7 +30,6 @@ function matchesKeywords(blob: string, keywords: string[]): boolean {
     if (needle.includes(" ")) {
       if (blob.includes(needle)) return true;
     } else {
-      // Word-boundary-ish: spaces around or start/end
       if (
         blob === needle ||
         blob.startsWith(`${needle} `) ||
@@ -44,19 +43,131 @@ function matchesKeywords(blob: string, keywords: string[]): boolean {
   return false;
 }
 
-/** Strip previous seo:* tags then re-apply from taxonomy matchers. */
+/** Strong, low-noise phrases for gendered gift guides. */
+const STRONG_MALE = [
+  "til ham",
+  "gave til ham",
+  "gaver til ham",
+  "gaveideer til ham",
+  "herrebekladning",
+  "herretoj",
+  "herretoej",
+  "herre mode",
+  "herrer",
+  "herre",
+  "mande",
+  "for men",
+  "male",
+  "gentleman",
+  "gentlemen",
+];
+
+const STRONG_FEMALE = [
+  "til hende",
+  "gave til hende",
+  "gaver til hende",
+  "gaveideer til hende",
+  "damebekladning",
+  "dametoj",
+  "dametoej",
+  "dame mode",
+  "damer",
+  "dame",
+  "kvinder",
+  "kvinde",
+  "for women",
+  "womens",
+  "women",
+  "female",
+  "ladies",
+];
+
+const CHILD_SIGNAL = [
+  "til born",
+  "til barn",
+  "til boern",
+  "born",
+  "boern",
+  "barn",
+  "baby",
+  "kids",
+  "child",
+  "children",
+  "junior",
+  "legetoj",
+  "legetoej",
+  "peppa",
+  "disney",
+  "bluey",
+  "rasmus klump",
+  "malebog",
+  "opgavebog",
+  "skriv og visk",
+];
+
+const FEED_GENDER_MALE = new Set([
+  "male",
+  "men",
+  "man",
+  "herre",
+  "herrer",
+  "mande",
+  "m",
+]);
+const FEED_GENDER_FEMALE = new Set([
+  "female",
+  "women",
+  "woman",
+  "dame",
+  "damer",
+  "kvinde",
+  "f",
+  "w",
+]);
+
+function hasStrongMale(blob: string, feedTags: string[]): boolean {
+  if (matchesKeywords(blob, STRONG_MALE)) return true;
+  return feedTags.some((t) => FEED_GENDER_MALE.has(normalizeText(t)));
+}
+
+function hasStrongFemale(blob: string, feedTags: string[]): boolean {
+  if (matchesKeywords(blob, STRONG_FEMALE)) return true;
+  return feedTags.some((t) => FEED_GENDER_FEMALE.has(normalizeText(t)));
+}
+
+function hasChildSignal(blob: string): boolean {
+  return matchesKeywords(blob, CHILD_SIGNAL);
+}
+
+/**
+ * Strip previous seo:* tags then re-apply from taxonomy matchers.
+ * Recipient ham/hende require strong gender signals — never soft-tag
+ * every book onto both gift guides.
+ */
 export function enrichProductSeoTags(
   product: NormalizedProduct,
 ): NormalizedProduct {
   const blob = buildSearchBlob(product);
   const baseTags = product.tags.filter((t) => !t.startsWith(SEO_TAG_PREFIX));
   const seoTags = new Set<string>();
+  const isChild = hasChildSignal(blob);
 
   for (const r of RECIPIENTS) {
+    if (r.id === "ham" || r.id === "hende") continue;
     if (matchesKeywords(blob, r.match.keywords)) {
       seoTags.add(recipientSeoTag(r.id));
     }
   }
+
+  if (isChild) {
+    seoTags.add(recipientSeoTag("barn"));
+  }
+
+  const male = !isChild && hasStrongMale(blob, baseTags);
+  const female = !isChild && hasStrongFemale(blob, baseTags);
+  // Exclusive: both → keep neither (ambiguous feed noise).
+  if (male && !female) seoTags.add(recipientSeoTag("ham"));
+  if (female && !male) seoTags.add(recipientSeoTag("hende"));
 
   for (const i of INTERESTS) {
     if (matchesKeywords(blob, i.match.keywords)) {
@@ -64,45 +175,28 @@ export function enrichProductSeoTags(
     }
   }
 
-  for (const o of OCCASIONS) {
-    if (matchesKeywords(blob, o.match.keywords)) {
-      seoTags.add(occasionSeoTag(o.id));
-    }
-  }
-
-  // Soft recipient cues from interest tags when feed has no gender field.
-  const interestIds = [...seoTags]
-    .filter((t) => t.startsWith("seo:interesse:"))
-    .map((t) => t.slice("seo:interesse:".length));
-  if (!seoTags.has(recipientSeoTag("ham")) && !seoTags.has(recipientSeoTag("hende"))) {
-    const maleLean = ["gameren", "tech", "outdoor", "fitness"];
-    const femaleLean = ["skoenhed", "bolig", "madentusiasten"];
-    if (interestIds.some((id) => maleLean.includes(id))) {
+  // Soft recipient only for clearly gendered interests, never on kids.
+  if (
+    !isChild &&
+    !seoTags.has(recipientSeoTag("ham")) &&
+    !seoTags.has(recipientSeoTag("hende"))
+  ) {
+    const interestIds = [...seoTags]
+      .filter((t) => t.startsWith("seo:interesse:"))
+      .map((t) => t.slice("seo:interesse:".length));
+    if (interestIds.includes("gameren") && !interestIds.includes("skoenhed")) {
       seoTags.add(recipientSeoTag("ham"));
-    }
-    if (interestIds.some((id) => femaleLean.includes(id))) {
+    } else if (
+      interestIds.includes("skoenhed") &&
+      !interestIds.includes("gameren")
+    ) {
       seoTags.add(recipientSeoTag("hende"));
     }
   }
 
-  // Soft occasion defaults: gift-worthy catalog items suit birthday/jul loosely
-  // when they have any interest/recipient signal — keeps occasion hubs populated
-  // without inventing product attributes.
-  if (
-    [...seoTags].some(
-      (t) => t.startsWith("seo:modtager:") || t.startsWith("seo:interesse:"),
-    )
-  ) {
-    seoTags.add(occasionSeoTag("fodselsdag"));
-    if (
-      blob.includes("gave") ||
-      blob.includes("aeske") ||
-      blob.includes("æske") ||
-      blob.includes("jul") ||
-      blob.includes("chokolade") ||
-      blob.includes("lys")
-    ) {
-      seoTags.add(occasionSeoTag("jul"));
+  for (const o of OCCASIONS) {
+    if (matchesKeywords(blob, o.match.keywords)) {
+      seoTags.add(occasionSeoTag(o.id));
     }
   }
 

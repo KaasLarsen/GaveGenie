@@ -34,6 +34,7 @@ describe("productWhereForFilters", () => {
       tags: {
         hasEvery: ["seo:modtager:ham", "seo:interesse:gameren"],
       },
+      NOT: { tags: { has: "seo:modtager:barn" } },
     });
 
     expect(

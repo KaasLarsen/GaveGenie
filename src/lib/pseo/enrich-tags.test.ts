@@ -37,7 +37,6 @@ describe("enrichProductSeoTags", () => {
     );
     expect(enriched.tags).toContain(interestSeoTag("gameren"));
     expect(enriched.tags).toContain(recipientSeoTag("ham"));
-    expect(enriched.tags).toContain(occasionSeoTag("fodselsdag"));
     expect(enriched.tags).toContain(budgetSeoTag("under-500"));
     expect(enriched.tags).toContain(budgetSeoTag("under-1000"));
     expect(enriched.tags).not.toContain(budgetSeoTag("under-200"));
@@ -55,6 +54,68 @@ describe("enrichProductSeoTags", () => {
     expect(enriched.tags).toContain(interestSeoTag("skoenhed"));
     expect(enriched.tags).toContain(recipientSeoTag("hende"));
     expect(enriched.tags).toContain(budgetSeoTag("under-200"));
+  });
+
+  it("does not put children's books on til-ham", () => {
+    const enriched = enrichProductSeoTags(
+      base({
+        title: "Peppa Pig - Skriv og visk ud",
+        category: "Bøger > Gaveidéer",
+        description: "Malebog for børn",
+        priceOre: 79_00,
+      }),
+    );
+    expect(enriched.tags).toContain(recipientSeoTag("barn"));
+    expect(enriched.tags).not.toContain(recipientSeoTag("ham"));
+    expect(enriched.tags).not.toContain(recipientSeoTag("hende"));
+  });
+
+  it("does not gender-tag random books from the word mand alone", () => {
+    const enriched = enrichProductSeoTags(
+      base({
+        title: "Den maskuline mand",
+        category: "Bøger",
+        priceOre: 149_00,
+      }),
+    );
+    expect(enriched.tags).not.toContain(recipientSeoTag("ham"));
+    expect(enriched.tags).not.toContain(recipientSeoTag("hende"));
+  });
+
+  it("tags explicit herretøj for ham", () => {
+    const enriched = enrichProductSeoTags(
+      base({
+        title: "Fleecetrøje herre",
+        category: "Herrebeklædning > Gaveidéer til ham",
+        priceOre: 299_00,
+      }),
+    );
+    expect(enriched.tags).toContain(recipientSeoTag("ham"));
+    expect(enriched.tags).not.toContain(recipientSeoTag("hende"));
+  });
+
+  it("tags explicit dame products for hende", () => {
+    const enriched = enrichProductSeoTags(
+      base({
+        title: "SilkescARF",
+        category: "Damebeklædning",
+        tags: ["dame"],
+        priceOre: 249_00,
+      }),
+    );
+    expect(enriched.tags).toContain(recipientSeoTag("hende"));
+    expect(enriched.tags).not.toContain(recipientSeoTag("ham"));
+  });
+
+  it("does not treat merchant Gaveidéer as jul", () => {
+    const enriched = enrichProductSeoTags(
+      base({
+        title: "Almindelig roman",
+        category: "Bøger > Gaveidéer",
+        priceOre: 129_00,
+      }),
+    );
+    expect(enriched.tags).not.toContain(occasionSeoTag("jul"));
   });
 
   it("strips and regenerates previous seo tags", () => {
@@ -84,5 +145,6 @@ describe("enrichProductSeoTags", () => {
     expect(enriched.tags).toContain("hobby");
     expect(enriched.tags).toContain("grøn");
     expect(enriched.tags).toContain(interestSeoTag("laeseren"));
+    expect(enriched.tags).not.toContain(recipientSeoTag("ham"));
   });
 });

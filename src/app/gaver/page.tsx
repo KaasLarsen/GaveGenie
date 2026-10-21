@@ -10,7 +10,7 @@ export const metadata: Metadata = {
     "Udforsk GaveGenies programmatiske gaveguides — filtreret efter modtager, interesse, anledning og budget.",
 };
 
-export const revalidate = 3600;
+export const revalidate = 300;
 
 const PRIMARY_HUBS = [
   { href: "/gaver/til-ham", label: "Gaver til ham" },
