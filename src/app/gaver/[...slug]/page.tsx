@@ -82,12 +82,9 @@ export default async function GaverLandingPage({ params }: PageProps) {
   const resolved = resolveSlug(segments);
   if (!resolved) notFound();
 
-  const landing = await getIndexedLanding(resolved.slug);
   const stats = await aggregateLandingStats(resolved.filters);
-  const indexed =
-    (landing?.indexed ?? false) || stats.productCount >= SEO_MIN_PRODUCTS;
-
-  if (!indexed || stats.productCount < SEO_MIN_PRODUCTS) {
+  // Allow browsing thin hubs from the header; sitemap/indexation still requires SEO_MIN_PRODUCTS.
+  if (stats.productCount < 1) {
     notFound();
   }
 
