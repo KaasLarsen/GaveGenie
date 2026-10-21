@@ -1,5 +1,9 @@
 import type { Prisma } from "@prisma/client";
 import { prisma } from "../db";
+import {
+  PARTNER_ADS_FEEDS,
+  PARTNER_ADS_PRIORITY_FEED_IDS,
+} from "../feeds/partner-ads-registry";
 import { SEO_MIN_PRODUCTS } from "./constants";
 import type { ResolvedSlug } from "./slug";
 import { resolveSlug } from "./slug";
@@ -16,6 +20,25 @@ import {
   recipientSeoTag,
 } from "./taxonomy";
 
+/** Curated guide grid size (multi-shop shortlist). */
+export const LANDING_PRODUCT_LIMIT = 12;
+/** Soft cap per shop on guide pages (~3 forslag pr. butik). */
+export const LANDING_MAX_PER_RETAILER = 3;
+
+const PRIORITY_RETAILER_NAMES = new Set(
+  PARTNER_ADS_PRIORITY_FEED_IDS.map((id) => {
+    const feed = PARTNER_ADS_FEEDS.find((f) => f.feedId === id);
+    return (feed?.label ?? "").toLowerCase();
+  }).filter(Boolean),
+);
+
+const MASS_CATALOG_RETAILER_NAMES = new Set([
+  "booktok",
+  "booktok.dk",
+  "med24",
+  "med24.dk",
+]);
+
 export type SeoProductRow = {
   id: string;
   title: string;
@@ -31,6 +54,106 @@ export type SeoProductRow = {
   isSample: boolean;
   retailerName: string;
 };
+
+function retailerKey(name: string): string {
+  return name.trim().toLowerCase();
+}
+
+function isPriorityRetailer(name: string): boolean {
+  const key = retailerKey(name);
+  if (PRIORITY_RETAILER_NAMES.has(key)) return true;
+  for (const priority of PRIORITY_RETAILER_NAMES) {
+    if (key.includes(priority) || priority.includes(key)) return true;
+  }
+  return false;
+}
+
+function isMassCatalogRetailer(name: string): boolean {
+  const key = retailerKey(name);
+  if (MASS_CATALOG_RETAILER_NAMES.has(key)) return true;
+  return key.includes("booktok") || key.includes("med24");
+}
+
+/**
+ * Rank a candidate pool for guide pages: priority gift shops first,
+ * mega-catalogs (Booktok/Med24) last unless the hub is book-focused.
+ */
+export function rankLandingCandidates<T extends {
+  retailerName: string;
+  inStock: boolean | null;
+  priceOre: number | null;
+  title: string;
+}>(
+  candidates: T[],
+  options?: { allowMassCatalog?: boolean },
+): T[] {
+  const allowMass = Boolean(options?.allowMassCatalog);
+  return [...candidates].sort((a, b) => {
+    const aPriority = isPriorityRetailer(a.retailerName) ? 1 : 0;
+    const bPriority = isPriorityRetailer(b.retailerName) ? 1 : 0;
+    if (aPriority !== bPriority) return bPriority - aPriority;
+
+    if (!allowMass) {
+      const aMass = isMassCatalogRetailer(a.retailerName) ? 1 : 0;
+      const bMass = isMassCatalogRetailer(b.retailerName) ? 1 : 0;
+      if (aMass !== bMass) return aMass - bMass;
+    }
+
+    const aStock = a.inStock === true ? 1 : 0;
+    const bStock = b.inStock === true ? 1 : 0;
+    if (aStock !== bStock) return bStock - aStock;
+
+    const aPrice = a.priceOre ?? -1;
+    const bPrice = b.priceOre ?? -1;
+    if (aPrice !== bPrice) return bPrice - aPrice;
+
+    return a.title.localeCompare(b.title, "da");
+  });
+}
+
+/**
+ * Hard per-shop cap for guides (no overflow fill). Better a short multi-shop
+ * list than 12 identical Rollerblade SKUs from one catalog.
+ */
+export function diversifyLandingStrict<T extends { retailerName: string }>(
+  ranked: T[],
+  limit = LANDING_PRODUCT_LIMIT,
+  maxPerRetailer = LANDING_MAX_PER_RETAILER,
+): T[] {
+  const counts = new Map<string, number>();
+  const selected: T[] = [];
+  for (const item of ranked) {
+    const key = item.retailerName || "unknown";
+    const n = counts.get(key) ?? 0;
+    if (n >= maxPerRetailer) continue;
+    selected.push(item);
+    counts.set(key, n + 1);
+    if (selected.length >= limit) break;
+  }
+  return selected;
+}
+
+export function selectLandingProducts<T extends {
+  retailerName: string;
+  inStock: boolean | null;
+  priceOre: number | null;
+  title: string;
+}>(
+  candidates: T[],
+  limit = LANDING_PRODUCT_LIMIT,
+  options?: { allowMassCatalog?: boolean },
+): T[] {
+  const ranked = rankLandingCandidates(candidates, options);
+  return diversifyLandingStrict(ranked, limit, LANDING_MAX_PER_RETAILER);
+}
+
+export function uniqueRetailerCount(
+  products: Array<{ retailerName: string }>,
+): number {
+  return new Set(
+    products.map((p) => retailerKey(p.retailerName)).filter(Boolean),
+  ).size;
+}
 
 function requiredTagsForFilters(filters: LandingFilters): string[] {
   const tags: string[] = [];
@@ -74,20 +197,22 @@ export async function countProductsForFilters(
 
 export async function fetchLandingProducts(
   filters: LandingFilters,
-  limit = 24,
+  limit = LANDING_PRODUCT_LIMIT,
 ): Promise<SeoProductRow[]> {
+  const poolSize = Math.min(Math.max(limit * 6, 48), 120);
+  const allowMassCatalog = filters.interestId === "laeseren";
+
   const rows = await prisma.product.findMany({
     where: {
       ...productWhereForFilters(filters),
       isSample: false,
     },
-    // Prefer in-stock specialty gifts over cheapest mass-market filler.
     orderBy: [{ inStock: "desc" }, { priceOre: "desc" }, { title: "asc" }],
-    take: limit,
+    take: poolSize,
     include: { retailer: { select: { name: true } } },
   });
 
-  return rows.map((r) => ({
+  const mapped: SeoProductRow[] = rows.map((r) => ({
     id: r.id,
     title: r.title,
     description: r.description,
@@ -102,6 +227,8 @@ export async function fetchLandingProducts(
     isSample: r.isSample,
     retailerName: r.retailer.name,
   }));
+
+  return selectLandingProducts(mapped, limit, { allowMassCatalog });
 }
 
 export async function aggregateLandingStats(filters: LandingFilters): Promise<{

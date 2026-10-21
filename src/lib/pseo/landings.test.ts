@@ -1,7 +1,89 @@
 import { describe, expect, it } from "vitest";
 import { SEO_MIN_PRODUCTS } from "./constants";
-import { productWhereForFilters } from "./landings";
+import {
+  LANDING_MAX_PER_RETAILER,
+  LANDING_PRODUCT_LIMIT,
+  productWhereForFilters,
+  selectLandingProducts,
+  uniqueRetailerCount,
+} from "./landings";
 import { enumerateLandingSpecs } from "./taxonomy";
+
+function candidate(
+  id: string,
+  retailerName: string,
+  priceOre = 200_00,
+): {
+  id: string;
+  retailerName: string;
+  inStock: boolean | null;
+  priceOre: number | null;
+  title: string;
+} {
+  return {
+    id,
+    retailerName,
+    inStock: true,
+    priceOre,
+    title: `Produkt ${id}`,
+  };
+}
+
+describe("selectLandingProducts", () => {
+  it("caps products per retailer at LANDING_MAX_PER_RETAILER", () => {
+    const pool = Array.from({ length: 10 }, (_, i) =>
+      candidate(`a${i}`, "Billigsport24", 500_00 - i),
+    );
+    const out = selectLandingProducts(pool, 12);
+    expect(out).toHaveLength(LANDING_MAX_PER_RETAILER);
+    expect(out.every((p) => p.retailerName === "Billigsport24")).toBe(true);
+  });
+
+  it("spreads across shops when the pool is mixed", () => {
+    const pool = [
+      ...Array.from({ length: 6 }, (_, i) =>
+        candidate(`sport${i}`, "Billigsport24", 400_00),
+      ),
+      ...Array.from({ length: 6 }, (_, i) =>
+        candidate(`wine${i}`, "DH Wines", 350_00),
+      ),
+      ...Array.from({ length: 6 }, (_, i) =>
+        candidate(`perfume${i}`, "EauDeParfum.dk", 300_00),
+      ),
+      ...Array.from({ length: 6 }, (_, i) =>
+        candidate(`poster${i}`, "Designplakater.dk", 250_00),
+      ),
+    ];
+    const out = selectLandingProducts(pool, LANDING_PRODUCT_LIMIT);
+    expect(out.length).toBeLessThanOrEqual(LANDING_PRODUCT_LIMIT);
+    expect(uniqueRetailerCount(out)).toBeGreaterThanOrEqual(3);
+    const counts = new Map<string, number>();
+    for (const p of out) {
+      counts.set(p.retailerName, (counts.get(p.retailerName) ?? 0) + 1);
+    }
+    for (const n of counts.values()) {
+      expect(n).toBeLessThanOrEqual(LANDING_MAX_PER_RETAILER);
+    }
+  });
+
+  it("prefers priority gift shops over Booktok when mass catalogs are downranked", () => {
+    const pool = [
+      ...Array.from({ length: 8 }, (_, i) =>
+        candidate(`book${i}`, "Booktok.dk", 900_00),
+      ),
+      candidate("wine1", "DH Wines", 299_00),
+      candidate("wine2", "SPS Wine", 279_00),
+      candidate("scent1", "EauDeParfum.dk", 249_00),
+    ];
+    const out = selectLandingProducts(pool, 6, { allowMassCatalog: false });
+    const names = out.map((p) => p.retailerName);
+    expect(names.filter((n) => n.includes("Booktok")).length).toBeLessThanOrEqual(
+      LANDING_MAX_PER_RETAILER,
+    );
+    expect(names.some((n) => n === "DH Wines")).toBe(true);
+    expect(uniqueRetailerCount(out)).toBeGreaterThanOrEqual(3);
+  });
+});
 
 describe("enumerateLandingSpecs", () => {
   it("includes known example paths from the pSEO plan", () => {

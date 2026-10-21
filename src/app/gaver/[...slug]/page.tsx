@@ -12,7 +12,9 @@ import {
   fetchLandingProducts,
   findRelatedLandings,
   getIndexedLanding,
+  LANDING_PRODUCT_LIMIT,
   listIndexedLandings,
+  uniqueRetailerCount,
 } from "@/lib/pseo/landings";
 import { resolveSlug } from "@/lib/pseo/slug";
 
@@ -143,21 +145,25 @@ export default async function GaverLandingPage({ params }: PageProps) {
   }
 
   const [products, related] = await Promise.all([
-    fetchLandingProducts(resolved.filters, 24),
+    fetchLandingProducts(resolved.filters, LANDING_PRODUCT_LIMIT),
     findRelatedLandings(resolved, 6),
   ]);
+
+  const shopCount = uniqueRetailerCount(products);
+  const ledeParts = [
+    `${stats.productCount} gaveidéer i kataloget`,
+    stats.minPriceOre != null
+      ? `fra ${(stats.minPriceOre / 100).toLocaleString("da-DK")} kr`
+      : null,
+    shopCount >= 2 ? `forslag fra ${shopCount} butikker` : null,
+  ].filter(Boolean);
 
   return (
     <article className="seo-landing section">
       <header className="seo-landing__header">
         <SeoBreadcrumbs crumbs={resolved.crumbs} />
         <h1>{copy.h1}</h1>
-        <p className="seo-landing__lede">
-          {stats.productCount} gaveidéer i kataloget
-          {stats.minPriceOre != null
-            ? ` · fra ${(stats.minPriceOre / 100).toLocaleString("da-DK")} kr`
-            : ""}
-        </p>
+        <p className="seo-landing__lede">{ledeParts.join(" · ")}</p>
       </header>
 
       <section className="seo-landing__intro" aria-label="Introduktion">
@@ -169,7 +175,7 @@ export default async function GaverLandingPage({ params }: PageProps) {
         className="seo-landing__products"
         aria-labelledby="seo-products-heading"
       >
-        <h2 id="seo-products-heading">Udvalgte gaver</h2>
+        <h2 id="seo-products-heading">Udvalgte forslag</h2>
         <div className="product-grid">
           {products.map((product) => (
             <SeoProductCard key={product.id} product={product} />
