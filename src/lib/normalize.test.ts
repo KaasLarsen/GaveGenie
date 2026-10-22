@@ -42,6 +42,14 @@ describe("normalize", () => {
     ]);
   });
 
+  it("drops infinitive at so it never becomes an FTS query", () => {
+    expect(tokenizeForSearch("elsker musik og at strikke")).toEqual([
+      "elsker",
+      "musik",
+      "strikke",
+    ]);
+  });
+
   it("asserts required normalized fields", () => {
     expect(() =>
       assertNormalizedProduct({

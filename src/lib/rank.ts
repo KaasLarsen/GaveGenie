@@ -1,14 +1,21 @@
 import {
   analyzeGiftIntent,
   genderMismatchPenalty,
+  isAdultGiftRecipient,
   type GiftIntent,
 } from "./gift-intent";
 import { normalizeText, tokenizeForSearch } from "./normalize";
-import { hasBookGiftIntent, isMassCatalogRetailer } from "./retailers";
+import {
+  hasBookGiftIntent,
+  isMassCatalogRetailer,
+  looksLikeChildProduct,
+} from "./retailers";
 import type { GiftPreferences, RankedCandidate } from "./types";
 
 /** Score penalty for Booktok/Med24 when the query is not about books. */
 export const MASS_CATALOG_PENALTY = 0.45;
+/** Extra penalty for legetøj / kids shops when gifting an adult. */
+export const CHILD_PRODUCT_PENALTY = 0.7;
 /** Soft interest baseline when no interest/plan tokens exist (was 0.5). */
 export const EMPTY_INTEREST_BASELINE = 0.15;
 /** Max mass-catalog picks in the final list without book intent. */
@@ -126,52 +133,24 @@ function budgetScore(
 }
 
 /**
- * Spread results across retailers: at most `maxPerRetailer` per shop,
- * filling remaining slots only if not enough shops.
+ * Spread results across retailers: at most `maxPerRetailer` per shop.
+ * Prefer fewer, more diverse results over filling the grid from one shop.
  */
 export function diversifyByRetailer<T extends { retailerName: string }>(
   ranked: T[],
   limit: number,
   maxPerRetailer = MAX_PER_RETAILER,
 ): T[] {
-  if (ranked.length <= limit) {
-    // Still cap per retailer when possible
-    const counts = new Map<string, number>();
-    const primary: T[] = [];
-    const overflow: T[] = [];
-    for (const item of ranked) {
-      const key = item.retailerName || "unknown";
-      const n = counts.get(key) ?? 0;
-      if (n < maxPerRetailer) {
-        primary.push(item);
-        counts.set(key, n + 1);
-      } else {
-        overflow.push(item);
-      }
-    }
-    if (primary.length >= limit) return primary.slice(0, limit);
-    return [...primary, ...overflow].slice(0, limit);
-  }
-
   const counts = new Map<string, number>();
   const selected: T[] = [];
-  const deferred: T[] = [];
 
   for (const item of ranked) {
+    if (selected.length >= limit) break;
     const key = item.retailerName || "unknown";
     const n = counts.get(key) ?? 0;
-    if (n < maxPerRetailer) {
-      selected.push(item);
-      counts.set(key, n + 1);
-      if (selected.length >= limit) return selected;
-    } else {
-      deferred.push(item);
-    }
-  }
-
-  for (const item of deferred) {
-    if (selected.length >= limit) break;
+    if (n >= maxPerRetailer) continue;
     selected.push(item);
+    counts.set(key, n + 1);
   }
   return selected;
 }
@@ -179,6 +158,7 @@ export function diversifyByRetailer<T extends { retailerName: string }>(
 /**
  * Retailer diversity plus a hard cap on mass-catalog shops (Booktok etc.)
  * unless the shopper clearly asked for books.
+ * Never backfills beyond maxPerRetailer — empty slots beat one-shop grids.
  */
 export function diversifyFinderResults<T extends { retailerName: string }>(
   ranked: T[],
@@ -193,30 +173,19 @@ export function diversifyFinderResults<T extends { retailerName: string }>(
   const counts = new Map<string, number>();
   let massCount = 0;
   const selected: T[] = [];
-  const deferred: T[] = [];
 
   for (const item of ranked) {
+    if (selected.length >= limit) break;
     const isMass = isMassCatalogRetailer(item.retailerName);
     if (isMass && massCount >= MAX_MASS_CATALOG_WITHOUT_BOOK_INTENT) {
-      deferred.push(item);
       continue;
     }
     const key = item.retailerName || "unknown";
     const n = counts.get(key) ?? 0;
-    if (n < maxPerRetailer) {
-      selected.push(item);
-      counts.set(key, n + 1);
-      if (isMass) massCount += 1;
-      if (selected.length >= limit) return selected;
-    } else {
-      deferred.push(item);
-    }
-  }
-
-  for (const item of deferred) {
-    if (selected.length >= limit) break;
-    if (isMassCatalogRetailer(item.retailerName)) continue;
+    if (n >= maxPerRetailer) continue;
     selected.push(item);
+    counts.set(key, n + 1);
+    if (isMass) massCount += 1;
   }
   return selected;
 }
@@ -298,6 +267,10 @@ function scoreProduct(
     !allowMassCatalog && isMassCatalogRetailer(product.retailerName)
       ? MASS_CATALOG_PENALTY
       : 0;
+  const childPenalty =
+    isAdultGiftRecipient(intent) && looksLikeChildProduct(product)
+      ? CHILD_PRODUCT_PENALTY
+      : 0;
 
   // Interest match dominates — without it, score stays low and gets filtered
   const score =
@@ -310,7 +283,8 @@ function scoreProduct(
     stockBoost -
     genderPenalty -
     avoided -
-    massPenalty;
+    massPenalty -
+    childPenalty;
 
   return { ...product, score };
 }
@@ -368,6 +342,14 @@ export function rankProducts(
     );
     if (withoutMass.length >= Math.min(3, pool.length) && withoutMass.length > 0) {
       pool = withoutMass;
+    }
+  }
+
+  // Adult recipients (mormor, mor, far…): drop kids catalogs / legetøj when possible
+  if (isAdultGiftRecipient(intent)) {
+    const withoutKids = pool.filter((p) => !looksLikeChildProduct(p));
+    if (withoutKids.length > 0) {
+      pool = withoutKids;
     }
   }
 

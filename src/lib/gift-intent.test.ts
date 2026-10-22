@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   analyzeGiftIntent,
   genderMismatchPenalty,
+  isAdultGiftRecipient,
 } from "./gift-intent";
 
 describe("analyzeGiftIntent", () => {
@@ -24,6 +25,19 @@ describe("analyzeGiftIntent", () => {
     });
     expect(intent.recipientGender).toBe("male");
     expect(intent.interestTokens).toContain("kaffe");
+  });
+
+  it("keeps musik and strikke for mormor without infinitive at", () => {
+    const intent = analyzeGiftIntent({
+      query: "mormor som elsker musik og at strikke",
+    });
+    expect(intent.recipientTokens).toContain("mormor");
+    expect(intent.interestTokens).toEqual(
+      expect.arrayContaining(["musik", "strikke"]),
+    );
+    expect(intent.interestTokens).not.toContain("at");
+    expect(intent.interestTokens).not.toContain("elsker");
+    expect(isAdultGiftRecipient(intent)).toBe(true);
   });
 });
 

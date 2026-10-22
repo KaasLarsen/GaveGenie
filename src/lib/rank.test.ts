@@ -241,6 +241,69 @@ describe("rankProducts", () => {
     expect(ranked[0]!.score).toBeGreaterThanOrEqual(MIN_RELEVANCE_SCORE);
   });
 
+  it("keeps KÆRE BØRN out of adult mormor searches", () => {
+    const mixed: RankableProduct[] = [
+      {
+        id: "kids-music",
+        title: "Musiklegetøj xylofon",
+        description: "Legetøj til børn",
+        brand: "Kids",
+        category: "Legetøj",
+        tags: ["seo:modtager:barn", "musik", "legetøj"],
+        priceOre: 19900,
+        currency: "DKK",
+        imageUrl: null,
+        productUrl: "https://example.com/kids",
+        inStock: true,
+        isSample: false,
+        retailerName: "KÆRE BØRN",
+      },
+      {
+        id: "headphones",
+        title: "Trådløse høretelefoner",
+        description: "Musik i øret",
+        brand: "Sound",
+        category: "Elektronik",
+        tags: ["musik", "høretelefoner"],
+        priceOre: 49900,
+        currency: "DKK",
+        imageUrl: null,
+        productUrl: "https://example.com/hp",
+        inStock: true,
+        isSample: false,
+        retailerName: "Justcool.dk",
+      },
+      {
+        id: "yarn",
+        title: "Merino garn nøgler",
+        description: "Blødt garn til strik",
+        brand: "Wool",
+        category: "Hobby",
+        tags: ["garn", "strikke"],
+        priceOre: 8900,
+        currency: "DKK",
+        imageUrl: null,
+        productUrl: "https://example.com/yarn",
+        inStock: true,
+        isSample: false,
+        retailerName: "Demo Bolig",
+      },
+    ];
+
+    const ranked = rankProducts(
+      mixed,
+      { query: "mormor som elsker musik og at strikke" },
+      4,
+      { plannedQueries: ["musik", "strikke", "garn"] },
+    );
+    expect(ranked.every((r) => r.retailerName !== "KÆRE BØRN")).toBe(true);
+    expect(ranked.some((r) => r.id === "headphones" || r.id === "yarn")).toBe(
+      true,
+    );
+    const retailers = new Set(ranked.map((r) => r.retailerName));
+    expect(retailers.size).toBeGreaterThanOrEqual(2);
+  });
+
   it("still allows Booktok when the query asks for a book", () => {
     const mixed: RankableProduct[] = [
       {
@@ -328,7 +391,7 @@ describe("rankProducts", () => {
 });
 
 describe("diversifyByRetailer", () => {
-  it("caps items per retailer before filling", () => {
+  it("caps items per retailer and does not backfill the same shop", () => {
     const items = [
       { id: "1", retailerName: "A", score: 1 },
       { id: "2", retailerName: "A", score: 0.9 },
@@ -337,6 +400,16 @@ describe("diversifyByRetailer", () => {
     ];
     const out = diversifyByRetailer(items, 3, 2);
     expect(out.map((i) => i.id)).toEqual(["1", "2", "4"]);
+  });
+
+  it("returns fewer results rather than filling from one retailer", () => {
+    const items = Array.from({ length: 8 }, (_, i) => ({
+      id: `only-${i}`,
+      retailerName: "KÆRE BØRN",
+      score: 1 - i * 0.01,
+    }));
+    const out = diversifyByRetailer(items, 8, 2);
+    expect(out).toHaveLength(2);
   });
 });
 

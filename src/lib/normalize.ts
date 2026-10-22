@@ -55,6 +55,7 @@ export const DANISH_SEARCH_STOPWORDS = new Set([
   "og",
   "eller",
   "som",
+  "at",
   "pa",
   "af",
   "for",

@@ -46,6 +46,7 @@ export const RECIPIENT_TOKENS = new Set([
 /** Linking / filler verbs that should not drive product retrieval. */
 export const WEAK_INTENT_TOKENS = new Set([
   "elsker",
+  "at",
   "kan",
   "godt",
   "li",
@@ -66,6 +67,43 @@ export const WEAK_INTENT_TOKENS = new Set([
   "rigtig",
   "aldrig",
   "altid",
+]);
+
+/** Explicit child recipients — allow kids catalogs / legetøj. */
+const CHILD_RECIPIENT_TOKENS = new Set(["barn", "baby"]);
+
+/** Clear adult relatives / adults — demote børneprodukter. */
+const ADULT_RECIPIENT_TOKENS = new Set([
+  "mor",
+  "far",
+  "mama",
+  "papa",
+  "mamma",
+  "pappa",
+  "kone",
+  "mand",
+  "hustru",
+  "ægtemand",
+  "aegtemand",
+  "kæreste",
+  "kaereste",
+  "partner",
+  "veninde",
+  "ven",
+  "kollega",
+  "chef",
+  "farmor",
+  "farfar",
+  "mormor",
+  "morfar",
+  "søster",
+  "soster",
+  "bror",
+  "svigerinde",
+  "svoger",
+  "ona",
+  "onkel",
+  "tante",
 ]);
 
 const FEMALE_RECIPIENT = new Set([
@@ -213,4 +251,18 @@ export function genderMismatchPenalty(
     if (hay.includes(cue)) return 0.55;
   }
   return 0;
+}
+
+/** True when the gift is explicitly for a child/baby. */
+export function wantsChildGifts(intent: GiftIntent): boolean {
+  return intent.recipientTokens.some((t) => CHILD_RECIPIENT_TOKENS.has(t));
+}
+
+/**
+ * True for clear adult recipients (mormor, mor, far, partner…).
+ * Used to demote legetøj / children’s catalogs in the gift finder.
+ */
+export function isAdultGiftRecipient(intent: GiftIntent): boolean {
+  if (wantsChildGifts(intent)) return false;
+  return intent.recipientTokens.some((t) => ADULT_RECIPIENT_TOKENS.has(t));
 }

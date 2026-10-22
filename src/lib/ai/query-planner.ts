@@ -1,5 +1,5 @@
 import OpenAI from "openai";
-import { analyzeGiftIntent } from "../gift-intent";
+import { analyzeGiftIntent, isAdultGiftRecipient } from "../gift-intent";
 import { giftSearchPlanSchema, type GiftSearchPlan } from "../schema";
 import type { GiftPreferences } from "../types";
 import { isOpenAiConfigured } from "./openai";
@@ -26,6 +26,10 @@ const INTEREST_SYNONYMS: Record<string, string[]> = {
   outdoor: ["outdoor", "vandring"],
   plakat: ["plakat", "poster"],
   vinflaske: ["vin", "rødvin"],
+  musik: ["musik", "høretelefoner", "højtaler", "vinyl"],
+  strikke: ["strikke", "garn", "strik"],
+  strik: ["strik", "garn", "strikke"],
+  garn: ["garn", "strikke", "strik"],
 };
 
 function getClient(): OpenAI {
@@ -36,12 +40,14 @@ function getClient(): OpenAI {
   return new OpenAI({ apiKey });
 }
 
-function uniqueQueries(queries: string[], max = 3): string[] {
+function uniqueQueries(queries: string[], max = 4): string[] {
   const seen = new Set<string>();
   const out: string[] = [];
   for (const raw of queries) {
     const q = raw.trim().replace(/\s+/g, " ");
+    // Drop unary glue / ultra-short noise ("at", "om") — never FTS alone
     if (q.length < 2) continue;
+    if (!q.includes(" ") && q.length < 3) continue;
     const key = q.toLowerCase();
     if (seen.has(key)) continue;
     seen.add(key);
@@ -61,9 +67,15 @@ export function heuristicGiftSearchPlan(
   const intent = analyzeGiftIntent(preferences);
   const queries: string[] = [];
 
+  // Primary interest tokens first so multi-interest queries keep both (musik + strikke)
   for (const token of intent.interestTokens) {
-    const syns = INTEREST_SYNONYMS[token] ?? [token];
-    queries.push(...syns);
+    queries.push(token);
+  }
+  for (const token of intent.interestTokens) {
+    const syns = INTEREST_SYNONYMS[token] ?? [];
+    for (const syn of syns) {
+      if (syn !== token) queries.push(syn);
+    }
   }
 
   if (queries.length === 0 && preferences.style?.trim()) {
@@ -80,9 +92,12 @@ export function heuristicGiftSearchPlan(
   } else if (intent.recipientGender === "male") {
     avoidTerms.push("dame", "damebukser", "dametøj", "kvinde", "pige");
   }
+  if (isAdultGiftRecipient(intent)) {
+    avoidTerms.push("legetøj", "legetoj", "børne", "borne", "baby", "kids");
+  }
 
   return giftSearchPlanSchema.parse({
-    searchQueries: uniqueQueries(queries, 3),
+    searchQueries: uniqueQueries(queries, 4),
     avoidTerms,
     budgetMaxDkk:
       preferences.budgetMaxOre !== undefined
@@ -116,9 +131,11 @@ Svar KUN med JSON:
 {"searchQueries":["..."],"avoidTerms":["..."],"budgetMaxDkk":null}
 
 Regler:
-- searchQueries: 1–3 korte danske strenge (2–5 ord) med KONKRETE produkt/interesse-ord
-  (fx "rødvin gave", "vinglas", "kaffekrus keramik"). Ikke hele sætninger.
-- Undgå filler: "gave til mor", "sød", "elsker", "på 65" — fokusér på hvad der skal købes.
+- searchQueries: 1–4 korte danske strenge (2–5 ord) med KONKRETE produkt/interesse-ord
+  (fx "rødvin gave", "vinglas", "kaffekrus keramik", "garn strik"). Ikke hele sætninger.
+- Dæk ALLE nævnte interesser (fx musik OG strikke → queries for begge).
+- Undgå filler: "gave til mor", "sød", "elsker", "på 65", "at" — fokusér på hvad der skal købes.
+- Til voksne (mormor, mor, far, partner…): undgå børne-/legetøj-søgninger; put "legetøj","børne" i avoidTerms.
 - avoidTerms: ord der IKKE passer (fx "herre","herrebukser" hvis gaven er til en kvinde/mor).
 - budgetMaxDkk: tal i kroner eller null.
 - Opfind aldrig produktnavne, priser eller URL'er — kun søgeord.`;
@@ -163,7 +180,7 @@ Regler:
       return { plan: fallback, source: "fallback" };
     }
 
-    const searchQueries = uniqueQueries(validated.data.searchQueries, 3);
+    const searchQueries = uniqueQueries(validated.data.searchQueries, 4);
     if (searchQueries.length === 0) {
       return { plan: fallback, source: "fallback" };
     }

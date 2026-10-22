@@ -17,4 +17,17 @@ describe("heuristicGiftSearchPlan", () => {
     });
     expect(plan.searchQueries.some((q) => /kaffe/i.test(q))).toBe(true);
   });
+
+  it("keeps both musik and strikke for mormor (no at glue)", () => {
+    const plan = heuristicGiftSearchPlan({
+      query: "mormor som elsker musik og at strikke",
+    });
+    const joined = plan.searchQueries.join(" ").toLowerCase();
+    expect(joined).toMatch(/musik/);
+    expect(joined).toMatch(/strik/);
+    expect(plan.searchQueries).not.toContain("at");
+    expect(plan.avoidTerms.some((t) => /leget|børne|borne|baby|kids/i.test(t))).toBe(
+      true,
+    );
+  });
 });
