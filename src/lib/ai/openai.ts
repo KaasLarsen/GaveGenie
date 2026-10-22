@@ -1,6 +1,7 @@
 import OpenAI from "openai";
 import { openaiWhyResponseSchema } from "../schema";
 import type { GiftPreferences, RankedCandidate } from "../types";
+import { preferenceWhy } from "../why";
 
 function getClient(): OpenAI {
   const apiKey = process.env.OPENAI_API_KEY;
@@ -15,6 +16,7 @@ export type WhyMap = Map<string, string>;
 /**
  * Ask OpenAI for short Danish "hvorfor" explanations for real candidate IDs only.
  * Never invent products — only IDs present in `candidates` are accepted.
+ * Never copy or paraphrase merchant/feed prose into user-facing whys.
  */
 export async function generateDanishWhys(
   preferences: GiftPreferences,
@@ -42,6 +44,8 @@ Regler:
 - Brug KUN productId'er fra den givne kandidatliste. Opfind aldrig produkter, priser eller URL'er.
 - Skriv 1-2 sætninger på dansk per produkt.
 - Vær konkret ift. brugerens ønsker (modtager, anledning, stil, budget).
+- Skriv ORIGINALE match-begrundelser ud fra brugerens ønsker. Kopier eller omskriv ALDRIG katalog-, forhandler- eller feed-tekst (titler, beskrivelser, tags).
+- Opfind ikke produktfakta (materialer, farver, detaljer) der ikke er nødvendige for at forklare match.
 - Hvis et produkt er isSample=true, må du gerne nævne at det er et eksempelprodukt.
 - Svar KUN med JSON: {"recommendations":[{"productId":"...","why":"..."}]}`;
 
@@ -93,35 +97,11 @@ Regler:
   // Ensure every returned candidate has a why (fallback for missing)
   for (const c of candidates) {
     if (!map.has(c.id)) {
-      map.set(c.id, fallbackWhy(c, preferences));
+      map.set(c.id, preferenceWhy(preferences, c.isSample));
     }
   }
 
   return map;
-}
-
-function fallbackWhy(
-  candidate: RankedCandidate,
-  preferences: GiftPreferences,
-): string {
-  const bits: string[] = [];
-  if (preferences.recipient) {
-    bits.push(`passer godt til ${preferences.recipient}`);
-  }
-  if (preferences.occasion) {
-    bits.push(`relevant til ${preferences.occasion}`);
-  }
-  if (preferences.style) {
-    bits.push(`matcher stilen ${preferences.style}`);
-  }
-  const reason =
-    bits.length > 0
-      ? bits.join(", ")
-      : `matcher din søgning “${preferences.query}”`;
-  const sampleNote = candidate.isSample
-    ? " (eksempelprodukt til udvikling)"
-    : "";
-  return `${candidate.title} ${reason}.${sampleNote}`.replace(/\s+/g, " ").trim();
 }
 
 function fallbackWhys(
@@ -130,7 +110,7 @@ function fallbackWhys(
 ): WhyMap {
   const map: WhyMap = new Map();
   for (const c of candidates) {
-    map.set(c.id, fallbackWhy(c, preferences));
+    map.set(c.id, preferenceWhy(preferences, c.isSample));
   }
   return map;
 }

@@ -46,12 +46,10 @@ export type RankedCandidate = {
   score: number;
 };
 
+/** User-facing recommendation — no merchant/feed prose (description/brand/category). */
 export type GiftRecommendation = {
   productId: string;
   title: string;
-  description: string | null;
-  brand: string | null;
-  category: string | null;
   priceOre: number | null;
   currency: string;
   imageUrl: string | null;

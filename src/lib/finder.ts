@@ -12,6 +12,7 @@ import {
   preferenceSearchTokens,
 } from "./search";
 import type { GiftPreferences, GiftRecommendation } from "./types";
+import { preferenceWhy } from "./why";
 
 export { preferenceSearchTokens } from "./search";
 /** @deprecated Use buildBudgetWhere — kept for callers/tests during transition */
@@ -225,9 +226,6 @@ export async function findGifts(
   const recommendations: GiftRecommendation[] = validated.map((c) => ({
     productId: c.id,
     title: c.title,
-    description: c.description,
-    brand: c.brand,
-    category: c.category,
     priceOre: c.priceOre,
     currency: c.currency,
     imageUrl: c.imageUrl,
@@ -237,9 +235,7 @@ export async function findGifts(
     retailerName: c.retailerName,
     why:
       whyMap.get(c.id) ||
-      `${c.title} matcher din søgning “${preferences.query}”.${
-        c.isSample ? " (eksempelprodukt til udvikling)" : ""
-      }`,
+      preferenceWhy(preferences, c.isSample),
     score: c.score,
   }));
 
