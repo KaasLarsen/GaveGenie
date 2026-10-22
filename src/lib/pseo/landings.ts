@@ -5,7 +5,11 @@ import {
   PARTNER_ADS_PRIORITY_FEED_IDS,
 } from "../feeds/partner-ads-registry";
 import { normalizeText } from "../normalize";
-import { isMassCatalogRetailer } from "../retailers";
+import {
+  isChildrenCatalogRetailer,
+  isMassCatalogRetailer,
+  looksLikeChildProduct,
+} from "../retailers";
 import { SEO_MIN_PRODUCTS } from "./constants";
 import type { ResolvedSlug } from "./slug";
 import { resolveSlug } from "./slug";
@@ -37,6 +41,7 @@ const PRIORITY_RETAILER_NAMES = new Set(
 const STRONG_MALE_PHRASES = [
   "til ham",
   "gave til ham",
+  "gaver til ham",
   "herre",
   "herretoj",
   "herrebekladning",
@@ -46,12 +51,46 @@ const STRONG_MALE_PHRASES = [
 const STRONG_FEMALE_PHRASES = [
   "til hende",
   "gave til hende",
+  "gaver til hende",
   "dame",
   "dametoj",
   "damebekladning",
   "womenswear",
   "ladieswear",
 ];
+/** Soft gendered interests that may appear on bare ham/hende hubs. */
+const SOFT_MALE_INTEREST = [
+  "gaming",
+  "gamer",
+  "playstation",
+  "xbox",
+  "nintendo",
+  "controller",
+  "headset",
+  "computergame",
+  "pc-spil",
+  "pc spil",
+];
+const SOFT_FEMALE_INTEREST = [
+  "parfume",
+  "makeup",
+  "hudpleje",
+  "skønhed",
+  "skoenhed",
+  "beauty",
+  "spa",
+  "creme",
+];
+const FEED_GENDER_MALE = ["male", "men", "man", "herre", "herrer", "mande"];
+const FEED_GENDER_FEMALE = [
+  "female",
+  "women",
+  "woman",
+  "dame",
+  "damer",
+  "kvinde",
+];
+/** Never show these on bare recipient hubs — wrong for “gaver til X”. */
 const WEAK_HUB_FILLER = [
   "braetspil",
   "brætspil",
@@ -70,6 +109,14 @@ const GIFT_SIGNAL = [
   "kit",
   "pakke",
 ];
+/** Adult occasions where kids shops / barn products are off-purpose. */
+const ADULT_OCCASIONS = new Set([
+  "mors-dag",
+  "fars-dag",
+  "bryllup",
+  "hostegave",
+]);
+const ADULT_RECIPIENTS = new Set(["ham", "hende", "par", "kollega"]);
 
 export type SeoProductRow = {
   id: string;
@@ -89,6 +136,17 @@ export type SeoProductRow = {
   why?: string;
 };
 
+type ScoreableProduct = {
+  retailerName: string;
+  inStock: boolean | null;
+  priceOre: number | null;
+  title: string;
+  description?: string | null;
+  category?: string | null;
+  brand?: string | null;
+  tags?: string[];
+};
+
 function retailerKey(name: string): string {
   return name.trim().toLowerCase();
 }
@@ -104,14 +162,21 @@ function isPriorityRetailer(name: string): boolean {
 
 function blobFor(product: {
   title: string;
+  description?: string | null;
   category?: string | null;
   brand?: string | null;
   tags?: string[];
 }): string {
+  // Exclude seo:* tags — otherwise “seo:anledning:jul” self-matches purpose checks.
+  const feedTags = (product.tags ?? []).filter((t) => !t.startsWith("seo:"));
   return normalizeText(
-    [product.title, product.category ?? "", product.brand ?? "", ...(product.tags ?? [])].join(
-      " ",
-    ),
+    [
+      product.title,
+      product.description ?? "",
+      product.category ?? "",
+      product.brand ?? "",
+      ...feedTags,
+    ].join(" "),
   );
 }
 
@@ -129,38 +194,186 @@ function includesAny(blob: string, needles: string[]): boolean {
   });
 }
 
+function hasFeedGender(
+  tags: string[] | undefined,
+  gender: "male" | "female",
+): boolean {
+  if (!tags?.length) return false;
+  const set = gender === "male" ? FEED_GENDER_MALE : FEED_GENDER_FEMALE;
+  return tags.some((t) => set.includes(normalizeText(t)));
+}
+
+/**
+ * Priority shops only boost when they fit the landing purpose
+ * (wine ≠ “gaver til ham”, perfume ≠ fitness, etc.).
+ */
+function contextualPriorityBoost(
+  retailerName: string,
+  filters?: LandingFilters,
+): number {
+  if (!isPriorityRetailer(retailerName)) return 0;
+  const key = retailerKey(retailerName);
+  const interest = filters?.interestId;
+  const occasion = filters?.occasionId;
+  const recipient = filters?.recipientId;
+
+  const isWine = key.includes("wine") || key.includes("dh wines") || key === "sps wine";
+  const isPerfume = key.includes("parfum") || key.includes("eaudeparfum");
+  const isPoster = key.includes("plakat") || key.includes("designplakat");
+
+  if (isWine) {
+    if (interest === "madentusiasten") return 40;
+    if (
+      occasion === "jul" ||
+      occasion === "hostegave" ||
+      occasion === "bryllup" ||
+      occasion === "fodselsdag"
+    ) {
+      return 28;
+    }
+    if (recipient === "par" || recipient === "kollega") return 12;
+    return 0;
+  }
+
+  if (isPerfume) {
+    if (interest === "skoenhed") return 40;
+    if (recipient === "hende") return 22;
+    if (occasion === "mors-dag" || occasion === "fodselsdag") return 20;
+    return 0;
+  }
+
+  if (isPoster) {
+    if (interest === "bolig") return 40;
+    if (recipient === "hende" || recipient === "ham" || recipient === "par") {
+      return 10;
+    }
+    return 0;
+  }
+
+  return 12;
+}
+
 export type GiftabilityOptions = {
   allowMassCatalog?: boolean;
   filters?: LandingFilters;
 };
 
 /**
- * Score how strong a gift pick is for a landing (higher = better).
- * Prefers gift shops, mid-range prices, clear gift/gender/occasion signals.
+ * Hard gate: product text must match the guide’s purpose.
+ * SEO tags alone are not enough — stale/soft tags caused wrong picks.
  */
-export function giftabilityScore(
-  product: {
-    retailerName: string;
-    inStock: boolean | null;
-    priceOre: number | null;
-    title: string;
-    category?: string | null;
-    brand?: string | null;
-    tags?: string[];
-  },
+export function matchesLandingPurpose(
+  product: ScoreableProduct,
   options?: GiftabilityOptions,
-): number {
+): boolean {
   const allowMass = Boolean(options?.allowMassCatalog);
   const filters = options?.filters;
+  if (!filters) return true;
+
+  const blob = blobFor(product);
+  const recipientId = filters.recipientId;
+  const interestId = filters.interestId;
+  const occasionId = filters.occasionId;
   const bareRecipientHub =
-    Boolean(filters?.recipientId) &&
-    !filters?.interestId &&
-    (filters?.recipientId === "ham" || filters?.recipientId === "hende");
+    Boolean(recipientId) && !interestId && !occasionId;
+  const adultRecipient =
+    recipientId != null && ADULT_RECIPIENTS.has(recipientId);
+
+  if (!allowMass && isMassCatalogRetailer(product.retailerName)) {
+    return false;
+  }
+
+  if (
+    (adultRecipient || (occasionId != null && ADULT_OCCASIONS.has(occasionId))) &&
+    (looksLikeChildProduct({
+      title: product.title,
+      category: product.category,
+      tags: product.tags,
+      retailerName: product.retailerName,
+    }) ||
+      isChildrenCatalogRetailer(product.retailerName) ||
+      product.tags?.includes(recipientSeoTag("barn")))
+  ) {
+    return false;
+  }
+
+  if (interestId) {
+    const interest = INTERESTS.find((i) => i.id === interestId);
+    if (interest) {
+      const negatives = interest.match.negativeKeywords;
+      if (negatives?.length && includesAny(blob, negatives)) return false;
+      if (!includesAny(blob, interest.match.keywords)) return false;
+    }
+  }
+
+  if (occasionId) {
+    const occasion = OCCASIONS.find((o) => o.id === occasionId);
+    if (occasion) {
+      const negatives = occasion.match.negativeKeywords;
+      if (negatives?.length && includesAny(blob, negatives)) return false;
+      if (!includesAny(blob, occasion.match.keywords)) return false;
+      // Bare gift boxes without Christmas words are not jul-purpose.
+      if (
+        occasionId === "jul" &&
+        includesAny(blob, ["gaveæske", "gaveaeske"]) &&
+        !includesAny(blob, ["jul", "jule", "christmas", "advent", "julegave"])
+      ) {
+        return false;
+      }
+    }
+  }
+
+  if (recipientId === "ham") {
+    // Brætspil/duftlys etc. are never “gaver til ham” hub material.
+    if (bareRecipientHub && includesAny(blob, WEAK_HUB_FILLER)) return false;
+    const strong = includesAny(blob, STRONG_MALE_PHRASES);
+    const soft = includesAny(blob, SOFT_MALE_INTEREST);
+    const feed = hasFeedGender(product.tags, "male");
+    // Always require a real ham signal — seo:modtager:ham alone is not enough.
+    if (!strong && !soft && !feed) return false;
+  }
+
+  if (recipientId === "hende") {
+    if (bareRecipientHub && includesAny(blob, WEAK_HUB_FILLER)) return false;
+    const strong = includesAny(blob, STRONG_FEMALE_PHRASES);
+    const soft = includesAny(blob, SOFT_FEMALE_INTEREST);
+    const feed = hasFeedGender(product.tags, "female");
+    if (!strong && !soft && !feed) return false;
+  }
+
+  if (
+    bareRecipientHub &&
+    recipientId &&
+    recipientId !== "ham" &&
+    recipientId !== "hende" &&
+    recipientId !== "barn"
+  ) {
+    const recipient = RECIPIENTS.find((r) => r.id === recipientId);
+    if (
+      recipient &&
+      !includesAny(blob, recipient.match.keywords) &&
+      !includesAny(blob, GIFT_SIGNAL)
+    ) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+/**
+ * Score how strong a gift pick is for a landing (higher = better).
+ * Prefers purpose fit, mid-range prices, clear gift/gender/occasion signals.
+ */
+export function giftabilityScore(
+  product: ScoreableProduct,
+  options?: GiftabilityOptions,
+): number {
+  const filters = options?.filters;
   const blob = blobFor(product);
   let score = 0;
 
-  if (isPriorityRetailer(product.retailerName)) score += 40;
-  if (!allowMass && isMassCatalogRetailer(product.retailerName)) score -= 55;
+  score += contextualPriorityBoost(product.retailerName, filters);
 
   if (product.inStock === true) score += 18;
   else if (product.inStock === null) score += 6;
@@ -177,37 +390,24 @@ export function giftabilityScore(
   if (includesAny(blob, GIFT_SIGNAL)) score += 12;
 
   if (filters?.recipientId === "ham") {
-    if (includesAny(blob, STRONG_MALE_PHRASES)) score += 28;
-    if (bareRecipientHub && includesAny(blob, WEAK_HUB_FILLER)) score -= 35;
+    if (includesAny(blob, STRONG_MALE_PHRASES)) score += 32;
+    else if (includesAny(blob, SOFT_MALE_INTEREST)) score += 18;
+    else if (hasFeedGender(product.tags, "male")) score += 10;
   }
   if (filters?.recipientId === "hende") {
-    if (includesAny(blob, STRONG_FEMALE_PHRASES)) score += 28;
-    if (bareRecipientHub && includesAny(blob, WEAK_HUB_FILLER)) score -= 35;
+    if (includesAny(blob, STRONG_FEMALE_PHRASES)) score += 32;
+    else if (includesAny(blob, SOFT_FEMALE_INTEREST)) score += 18;
+    else if (hasFeedGender(product.tags, "female")) score += 10;
   }
 
-  if (filters?.occasionId === "jul") {
-    if (includesAny(blob, ["jul", "jule", "christmas", "advent", "julegave"])) {
-      score += 30;
-    }
-    // Plain gift boxes without Christmas signal are weak jul picks.
-    if (
-      includesAny(blob, ["gaveæske", "gaveaeske"]) &&
-      !includesAny(blob, ["jul", "jule", "christmas", "advent"])
-    ) {
-      score -= 25;
-    }
-  } else if (filters?.occasionId) {
+  if (filters?.occasionId) {
     const occasion = OCCASIONS.find((o) => o.id === filters.occasionId);
-    if (occasion && includesAny(blob, occasion.match.keywords)) score += 20;
+    if (occasion && includesAny(blob, occasion.match.keywords)) score += 30;
   }
 
   if (filters?.interestId) {
     const interest = INTERESTS.find((i) => i.id === filters.interestId);
-    if (interest && includesAny(blob, interest.match.keywords)) score += 18;
-  }
-
-  if (product.tags?.includes(recipientSeoTag("barn")) && bareRecipientHub) {
-    score -= 40;
+    if (interest && includesAny(blob, interest.match.keywords)) score += 30;
   }
 
   return score;
@@ -216,17 +416,10 @@ export function giftabilityScore(
 /**
  * Rank a candidate pool for guide pages by giftability (not raw price).
  */
-export function rankLandingCandidates<
-  T extends {
-    retailerName: string;
-    inStock: boolean | null;
-    priceOre: number | null;
-    title: string;
-    category?: string | null;
-    brand?: string | null;
-    tags?: string[];
-  },
->(candidates: T[], options?: GiftabilityOptions): T[] {
+export function rankLandingCandidates<T extends ScoreableProduct>(
+  candidates: T[],
+  options?: GiftabilityOptions,
+): T[] {
   return [...candidates].sort((a, b) => {
     const scoreDiff =
       giftabilityScore(b, options) - giftabilityScore(a, options);
@@ -236,9 +429,8 @@ export function rankLandingCandidates<
 }
 
 /**
- * Prefer multi-shop shortlists (max N per retailer). If several shops are
- * present but the list is still short, soft-overflow ignoring the cap.
- * Single-shop pools stay hard-capped (better short than 12 identical SKUs).
+ * Prefer multi-shop shortlists (max N per retailer).
+ * Never soft-overflow past the cap — fewer good picks beat one-shop filler.
  */
 export function diversifyLandingStrict<T extends { retailerName: string }>(
   ranked: T[],
@@ -247,49 +439,28 @@ export function diversifyLandingStrict<T extends { retailerName: string }>(
 ): T[] {
   const counts = new Map<string, number>();
   const selected: T[] = [];
-  const selectedIds = new Set<T>();
-  const poolRetailers = new Set(
-    ranked.map((item) => item.retailerName || "unknown"),
-  );
 
   for (const item of ranked) {
     const key = item.retailerName || "unknown";
     const n = counts.get(key) ?? 0;
     if (n >= maxPerRetailer) continue;
     selected.push(item);
-    selectedIds.add(item);
     counts.set(key, n + 1);
     if (selected.length >= limit) return selected;
-  }
-
-  if (selected.length < limit && poolRetailers.size >= 2) {
-    for (const item of ranked) {
-      if (selectedIds.has(item)) continue;
-      selected.push(item);
-      selectedIds.add(item);
-      if (selected.length >= limit) break;
-    }
   }
 
   return selected;
 }
 
-export function selectLandingProducts<
-  T extends {
-    retailerName: string;
-    inStock: boolean | null;
-    priceOre: number | null;
-    title: string;
-    category?: string | null;
-    brand?: string | null;
-    tags?: string[];
-  },
->(
+export function selectLandingProducts<T extends ScoreableProduct>(
   candidates: T[],
   limit = LANDING_PRODUCT_LIMIT,
   options?: GiftabilityOptions,
 ): T[] {
-  const ranked = rankLandingCandidates(candidates, options);
+  const purposeful = candidates.filter((c) =>
+    matchesLandingPurpose(c, options),
+  );
+  const ranked = rankLandingCandidates(purposeful, options);
   return diversifyLandingStrict(ranked, limit, LANDING_MAX_PER_RETAILER);
 }
 
@@ -321,13 +492,21 @@ export function productWhereForFilters(
   if (filters.budgetMaxOre != null) {
     where.priceOre = { lte: filters.budgetMaxOre };
   }
-  // Adult recipient hubs: no children's products, and no pure book-catalog
-  // filler (Booktok etc. tagged only as læseren).
-  if (filters.recipientId === "ham" || filters.recipientId === "hende") {
+  // Adult recipient / occasion hubs: no children's products, and no pure
+  // book-catalog filler on bare recipient hubs.
+  const adultRecipient =
+    filters.recipientId != null && ADULT_RECIPIENTS.has(filters.recipientId);
+  const adultOccasion =
+    filters.occasionId != null && ADULT_OCCASIONS.has(filters.occasionId);
+  if (adultRecipient || adultOccasion) {
     const notClauses: Prisma.ProductWhereInput[] = [
       { tags: { has: recipientSeoTag("barn") } },
     ];
-    if (!filters.interestId) {
+    if (
+      adultRecipient &&
+      !filters.interestId &&
+      (filters.recipientId === "ham" || filters.recipientId === "hende")
+    ) {
       notClauses.push({ tags: { has: interestSeoTag("laeseren") } });
     }
     where.NOT = notClauses.length === 1 ? notClauses[0] : { OR: notClauses };
@@ -345,7 +524,8 @@ export async function fetchLandingProducts(
   filters: LandingFilters,
   limit = LANDING_PRODUCT_LIMIT,
 ): Promise<SeoProductRow[]> {
-  const poolSize = Math.min(Math.max(limit * 6, 48), 120);
+  // Larger pool, no price-desc bias — giftability + purpose-fit decide.
+  const poolSize = Math.min(Math.max(limit * 12, 72), 200);
   const allowMassCatalog = filters.interestId === "laeseren";
 
   const rows = await prisma.product.findMany({
@@ -353,7 +533,7 @@ export async function fetchLandingProducts(
       ...productWhereForFilters(filters),
       isSample: false,
     },
-    orderBy: [{ inStock: "desc" }, { priceOre: "desc" }, { title: "asc" }],
+    orderBy: [{ inStock: "desc" }, { updatedAt: "desc" }, { title: "asc" }],
     take: poolSize,
     include: { retailer: { select: { name: true } } },
   });

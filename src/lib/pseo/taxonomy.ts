@@ -216,8 +216,7 @@ export const INTERESTS: InterestDef[] = [
         "creme",
         "makeup",
         "hudpleje",
-        // Avoid bare "duft" — candles/diffusers soft-mapped every scent to hende.
-        "duftlys",
+        // Avoid bare "duft" / "duftlys" — candles belong on bolig, not skønhed.
         "spa",
       ],
     },

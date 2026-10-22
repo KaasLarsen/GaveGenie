@@ -4,6 +4,7 @@ import {
   giftabilityScore,
   LANDING_MAX_PER_RETAILER,
   LANDING_PRODUCT_LIMIT,
+  matchesLandingPurpose,
   productWhereForFilters,
   selectLandingProducts,
   uniqueRetailerCount,
@@ -19,6 +20,7 @@ function candidate(
     category: string | null;
     tags: string[];
     inStock: boolean | null;
+    description: string | null;
   }>,
 ): {
   id: string;
@@ -27,6 +29,7 @@ function candidate(
   priceOre: number | null;
   title: string;
   category: string | null;
+  description: string | null;
   tags: string[];
 } {
   return {
@@ -36,6 +39,7 @@ function candidate(
     priceOre,
     title: extra?.title ?? `Produkt ${id}`,
     category: extra?.category ?? null,
+    description: extra?.description ?? null,
     tags: extra?.tags ?? [],
   };
 }
@@ -77,48 +81,75 @@ describe("selectLandingProducts", () => {
     }
   });
 
-  it("prefers priority gift shops over Booktok when mass catalogs are downranked", () => {
+  it("hard-excludes Booktok on non-læseren guides", () => {
     const pool = [
       ...Array.from({ length: 8 }, (_, i) =>
-        candidate(`book${i}`, "Booktok.dk", 900_00),
+        candidate(`book${i}`, "Booktok.dk", 900_00, {
+          title: `Roman ${i}`,
+          tags: ["seo:interesse:laeseren"],
+        }),
       ),
-      candidate("wine1", "DH Wines", 299_00),
-      candidate("wine2", "SPS Wine", 279_00),
-      candidate("scent1", "EauDeParfum.dk", 249_00),
+      candidate("wine1", "DH Wines", 299_00, {
+        title: "Rødvin gaveæske",
+        category: "Vin",
+        tags: ["seo:interesse:madentusiasten"],
+      }),
+      candidate("scent1", "EauDeParfum.dk", 249_00, {
+        title: "Eau de parfum",
+        tags: ["seo:interesse:skoenhed", "female"],
+      }),
     ];
-    const out = selectLandingProducts(pool, 6, { allowMassCatalog: false });
-    const names = out.map((p) => p.retailerName);
-    expect(names.filter((n) => n.includes("Booktok")).length).toBeLessThanOrEqual(
-      LANDING_MAX_PER_RETAILER,
-    );
-    expect(names.some((n) => n === "DH Wines")).toBe(true);
-    expect(uniqueRetailerCount(out)).toBeGreaterThanOrEqual(3);
+    const out = selectLandingProducts(pool, 6, {
+      allowMassCatalog: false,
+      filters: { interestId: "madentusiasten" },
+    });
+    expect(out.every((p) => !p.retailerName.includes("Booktok"))).toBe(true);
+    expect(out.some((p) => p.retailerName === "DH Wines")).toBe(true);
   });
 
-  it("soft-overflow fills multi-shop pools that would otherwise stay short", () => {
+  it("does not soft-overflow past the per-shop cap", () => {
     const pool = [
       ...Array.from({ length: 5 }, (_, i) =>
-        candidate(`a${i}`, "Shop A", 400_00),
+        candidate(`a${i}`, "Shop A", 400_00, {
+          title: `Julegave ${i}`,
+          tags: ["seo:anledning:jul"],
+        }),
       ),
       ...Array.from({ length: 5 }, (_, i) =>
-        candidate(`b${i}`, "Shop B", 350_00),
+        candidate(`b${i}`, "Shop B", 350_00, {
+          title: `Julekalender ${i}`,
+          tags: ["seo:anledning:jul"],
+        }),
       ),
     ];
-    const out = selectLandingProducts(pool, 8);
-    expect(out.length).toBe(8);
+    const out = selectLandingProducts(pool, 8, {
+      filters: { occasionId: "jul" },
+    });
+    expect(out.length).toBe(LANDING_MAX_PER_RETAILER * 2);
     expect(uniqueRetailerCount(out)).toBe(2);
+    const counts = new Map<string, number>();
+    for (const p of out) {
+      counts.set(p.retailerName, (counts.get(p.retailerName) ?? 0) + 1);
+    }
+    for (const n of counts.values()) {
+      expect(n).toBeLessThanOrEqual(LANDING_MAX_PER_RETAILER);
+    }
   });
 
   it("keeps a hard cap when the pool is a single shop", () => {
     const pool = Array.from({ length: 10 }, (_, i) =>
-      candidate(`only${i}`, "SingleShop", 300_00 - i),
+      candidate(`only${i}`, "SingleShop", 300_00 - i, {
+        title: `Julegave ${i}`,
+      }),
     );
-    const out = selectLandingProducts(pool, 8);
+    const out = selectLandingProducts(pool, 8, {
+      filters: { occasionId: "jul" },
+    });
     expect(out).toHaveLength(LANDING_MAX_PER_RETAILER);
   });
 
-  it("ranks strong ham gifts above board-game hub filler", () => {
-    const strong = candidate("watch", "DH Wines", 399_00, {
+  it("drops board-game filler from bare til-ham and keeps strong ham gifts", () => {
+    const strong = candidate("watch", "Apuls.dk", 399_00, {
       title: "Herreur klassisk",
       category: "Herrebeklædning > Gaver til ham",
       tags: ["seo:modtager:ham"],
@@ -127,18 +158,92 @@ describe("selectLandingProducts", () => {
       title: "Brætspil for voksne",
       tags: ["seo:modtager:ham", "seo:interesse:gameren"],
     });
-    const strongScore = giftabilityScore(strong, {
-      filters: { recipientId: "ham" },
+    const wineOffPurpose = candidate("wine", "DH Wines", 299_00, {
+      title: "Barolo 2019",
+      category: "Vin",
+      tags: ["seo:modtager:ham"],
     });
-    const fillerScore = giftabilityScore(filler, {
-      filters: { recipientId: "ham" },
-    });
-    expect(strongScore).toBeGreaterThan(fillerScore);
 
-    const out = selectLandingProducts([filler, strong], 2, {
+    expect(
+      matchesLandingPurpose(filler, { filters: { recipientId: "ham" } }),
+    ).toBe(false);
+    expect(
+      matchesLandingPurpose(wineOffPurpose, {
+        filters: { recipientId: "ham" },
+      }),
+    ).toBe(false);
+    expect(
+      matchesLandingPurpose(strong, { filters: { recipientId: "ham" } }),
+    ).toBe(true);
+
+    const out = selectLandingProducts([filler, strong, wineOffPurpose], 3, {
       filters: { recipientId: "ham" },
     });
-    expect(out[0]?.id).toBe("watch");
+    expect(out.map((p) => p.id)).toEqual(["watch"]);
+  });
+
+  it("requires interest keywords on interest guides", () => {
+    const gaming = candidate("headset", "Justcool.dk", 399_00, {
+      title: "RGB gaming headset",
+      category: "Elektronik",
+      tags: ["seo:modtager:ham", "seo:interesse:gameren", "male"],
+    });
+    const randomHam = candidate("socks", "Billigsport24", 199_00, {
+      title: "Herresokker 3-pak",
+      category: "Herrebeklædning",
+      tags: ["seo:modtager:ham", "seo:interesse:gameren"],
+    });
+    const out = selectLandingProducts([gaming, randomHam], 2, {
+      filters: { recipientId: "ham", interestId: "gameren" },
+    });
+    expect(out.map((p) => p.id)).toEqual(["headset"]);
+  });
+
+  it("requires occasion keywords on occasion guides", () => {
+    const jul = candidate("advent", "DH Wines", 249_00, {
+      title: "Julekalender med vin",
+      tags: ["seo:anledning:jul"],
+    });
+    const plainBox = candidate("box", "Med24", 149_00, {
+      title: "Gaveæske neutral",
+      tags: ["seo:anledning:jul"],
+    });
+    expect(
+      matchesLandingPurpose(jul, { filters: { occasionId: "jul" } }),
+    ).toBe(true);
+    expect(
+      matchesLandingPurpose(plainBox, {
+        allowMassCatalog: true,
+        filters: { occasionId: "jul" },
+      }),
+    ).toBe(false);
+  });
+
+  it("does not boost wine shops on bare til-ham over real ham gifts", () => {
+    const watch = candidate("watch", "Apuls.dk", 399_00, {
+      title: "Gave til ham — herreur",
+      category: "Herrebeklædning",
+      tags: ["seo:modtager:ham"],
+    });
+    const wine = candidate("wine", "DH Wines", 299_00, {
+      title: "Gave til ham — rødvin",
+      category: "Vin",
+      tags: ["seo:modtager:ham"],
+    });
+    // Same gift/gender signals; wine shop must not win via priority boost.
+    const watchScore = giftabilityScore(watch, {
+      filters: { recipientId: "ham" },
+    });
+    const wineScore = giftabilityScore(wine, {
+      filters: { recipientId: "ham" },
+    });
+    expect(watchScore).toBeGreaterThanOrEqual(wineScore);
+
+    const madWineScore = giftabilityScore(wine, {
+      filters: { interestId: "madentusiasten" },
+    });
+    // Wine shops still get a purpose-fit boost on madentusiasten.
+    expect(madWineScore).toBeGreaterThan(wineScore);
   });
 });
 
@@ -203,6 +308,17 @@ describe("productWhereForFilters", () => {
         hasEvery: ["seo:anledning:jul", "seo:budget:under-200"],
       },
       priceOre: { lte: 200_00 },
+    });
+
+    expect(
+      productWhereForFilters({
+        occasionId: "mors-dag",
+      }),
+    ).toEqual({
+      tags: {
+        hasEvery: ["seo:anledning:mors-dag"],
+      },
+      NOT: { tags: { has: "seo:modtager:barn" } },
     });
   });
 });

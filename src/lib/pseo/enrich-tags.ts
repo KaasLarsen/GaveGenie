@@ -241,9 +241,8 @@ export function enrichProductSeoTags(
     seoTags.add(interestSeoTag(i.id));
   }
 
-  // Soft recipient from strong gendered-interest signals (not bare "duft").
-  // Board games may soft-map to ham so til-ham/gameren stays populated;
-  // bare hubs demote them via giftability ranking.
+  // Soft recipient from clearly gendered interest signals (gaming gear /
+  // beauty) — never board games alone (wrong on “gaver til ham”).
   if (
     !isChild &&
     !seoTags.has(recipientSeoTag("ham")) &&
@@ -251,12 +250,9 @@ export function enrichProductSeoTags(
   ) {
     const softMale = matchesKeywords(blob, SOFT_MALE_INTEREST);
     const softFemale = matchesKeywords(blob, SOFT_FEMALE_INTEREST);
-    const boardGame =
-      seoTags.has(interestSeoTag("gameren")) &&
-      matchesKeywords(blob, ["brætspil", "braetspil", "boardgame"]);
-    if ((softMale || boardGame) && !softFemale) {
+    if (softMale && !softFemale) {
       seoTags.add(recipientSeoTag("ham"));
-    } else if (softFemale && !softMale && !boardGame) {
+    } else if (softFemale && !softMale) {
       seoTags.add(recipientSeoTag("hende"));
     }
   }

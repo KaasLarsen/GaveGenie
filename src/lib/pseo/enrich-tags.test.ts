@@ -177,6 +177,19 @@ describe("enrichProductSeoTags", () => {
     expect(enriched.tags).toContain(recipientSeoTag("ham"));
   });
 
+  it("does not soft-map board games onto til-ham", () => {
+    const enriched = enrichProductSeoTags(
+      base({
+        title: "Strategi brætspil for voksne",
+        category: "Spil",
+        priceOre: 299_00,
+      }),
+    );
+    expect(enriched.tags).toContain(interestSeoTag("gameren"));
+    expect(enriched.tags).not.toContain(recipientSeoTag("ham"));
+    expect(enriched.tags).not.toContain(recipientSeoTag("hende"));
+  });
+
   it("strips and regenerates previous seo tags", () => {
     const enriched = enrichProductSeoTags(
       base({
@@ -275,7 +288,7 @@ describe("enrichProductSeoTags", () => {
     expect(enriched.tags).not.toContain(interestSeoTag("bolig"));
   });
 
-  it("tags duftlys as bolig", () => {
+  it("tags duftlys as bolig, not skønhed", () => {
     const enriched = enrichProductSeoTags(
       base({
         title: "Soja duftlys vanilje",
@@ -284,5 +297,7 @@ describe("enrichProductSeoTags", () => {
       }),
     );
     expect(enriched.tags).toContain(interestSeoTag("bolig"));
+    expect(enriched.tags).not.toContain(interestSeoTag("skoenhed"));
+    expect(enriched.tags).not.toContain(recipientSeoTag("hende"));
   });
 });
