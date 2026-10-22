@@ -112,6 +112,19 @@ describe("MIN_RELEVANCE_SCORE", () => {
   });
 });
 
+describe("findGifts fallback policy", () => {
+  it("documents that budget-only newest fallback is gone", async () => {
+    // findGifts used to pull Product.findMany({ orderBy: updatedAt }) when FTS
+    // missed — that flooded Booktok into every empty search. Empty FTS now
+    // yields an empty recommendation list instead.
+    const src = await import("node:fs/promises").then((fs) =>
+      fs.readFile(new URL("./finder.ts", import.meta.url), "utf8"),
+    );
+    expect(src).not.toMatch(/orderBy:\s*\{\s*updatedAt:\s*"desc"/);
+    expect(src).toMatch(/No budget-only/);
+  });
+});
+
 describe("mergeProductsByQueryOrder", () => {
   it("dedupes while keeping earlier query priority", () => {
     const a = {

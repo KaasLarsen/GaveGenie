@@ -4,7 +4,15 @@ import {
   type GiftIntent,
 } from "./gift-intent";
 import { normalizeText, tokenizeForSearch } from "./normalize";
+import { hasBookGiftIntent, isMassCatalogRetailer } from "./retailers";
 import type { GiftPreferences, RankedCandidate } from "./types";
+
+/** Score penalty for Booktok/Med24 when the query is not about books. */
+export const MASS_CATALOG_PENALTY = 0.45;
+/** Soft interest baseline when no interest/plan tokens exist (was 0.5). */
+export const EMPTY_INTEREST_BASELINE = 0.15;
+/** Max mass-catalog picks in the final list without book intent. */
+export const MAX_MASS_CATALOG_WITHOUT_BOOK_INTENT = 1;
 
 export type RankableProduct = {
   id: string;
@@ -80,7 +88,7 @@ function interestMatchScore(
   interestTokens: string[],
   product: RankableProduct,
 ): number {
-  if (interestTokens.length === 0) return 0.5;
+  if (interestTokens.length === 0) return EMPTY_INTEREST_BASELINE;
   const focus = normalizeText(productFocusBlob(product));
   const title = normalizeText(product.title);
   let hits = 0;
@@ -168,6 +176,51 @@ export function diversifyByRetailer<T extends { retailerName: string }>(
   return selected;
 }
 
+/**
+ * Retailer diversity plus a hard cap on mass-catalog shops (Booktok etc.)
+ * unless the shopper clearly asked for books.
+ */
+export function diversifyFinderResults<T extends { retailerName: string }>(
+  ranked: T[],
+  limit: number,
+  allowMassCatalog: boolean,
+  maxPerRetailer = MAX_PER_RETAILER,
+): T[] {
+  if (allowMassCatalog) {
+    return diversifyByRetailer(ranked, limit, maxPerRetailer);
+  }
+
+  const counts = new Map<string, number>();
+  let massCount = 0;
+  const selected: T[] = [];
+  const deferred: T[] = [];
+
+  for (const item of ranked) {
+    const isMass = isMassCatalogRetailer(item.retailerName);
+    if (isMass && massCount >= MAX_MASS_CATALOG_WITHOUT_BOOK_INTENT) {
+      deferred.push(item);
+      continue;
+    }
+    const key = item.retailerName || "unknown";
+    const n = counts.get(key) ?? 0;
+    if (n < maxPerRetailer) {
+      selected.push(item);
+      counts.set(key, n + 1);
+      if (isMass) massCount += 1;
+      if (selected.length >= limit) return selected;
+    } else {
+      deferred.push(item);
+    }
+  }
+
+  for (const item of deferred) {
+    if (selected.length >= limit) break;
+    if (isMassCatalogRetailer(item.retailerName)) continue;
+    selected.push(item);
+  }
+  return selected;
+}
+
 function avoidPenalty(product: RankableProduct, avoidTerms: string[]): number {
   if (avoidTerms.length === 0) return 0;
   const hay = normalizeText(productFocusBlob(product));
@@ -237,6 +290,14 @@ function scoreProduct(
   );
   const avoided = avoidPenalty(product, options.avoidTerms ?? []);
   const planBoost = plannedQueryBoost(product, options.plannedQueries ?? []);
+  const allowMassCatalog = hasBookGiftIntent(
+    preferences.query,
+    ...(options.plannedQueries ?? []),
+  );
+  const massPenalty =
+    !allowMassCatalog && isMassCatalogRetailer(product.retailerName)
+      ? MASS_CATALOG_PENALTY
+      : 0;
 
   // Interest match dominates — without it, score stays low and gets filtered
   const score =
@@ -248,7 +309,8 @@ function scoreProduct(
     budget * 0.15 +
     stockBoost -
     genderPenalty -
-    avoided;
+    avoided -
+    massPenalty;
 
   return { ...product, score };
 }
@@ -294,6 +356,21 @@ export function rankProducts(
     }
   }
 
+  const allowMassCatalog = hasBookGiftIntent(
+    preferences.query,
+    ...(options.plannedQueries ?? []),
+  );
+
+  // Without book intent, drop mass-catalog filler when we have other options
+  if (!allowMassCatalog) {
+    const withoutMass = pool.filter(
+      (p) => !isMassCatalogRetailer(p.retailerName),
+    );
+    if (withoutMass.length >= Math.min(3, pool.length) && withoutMass.length > 0) {
+      pool = withoutMass;
+    }
+  }
+
   const scored = pool.map((product) =>
     scoreProduct(product, preferences, intent, options),
   );
@@ -302,7 +379,12 @@ export function rankProducts(
     (a, b) => b.score - a.score || a.title.localeCompare(b.title, "da"),
   );
 
-  return diversifyByRetailer(sorted, limit, MAX_PER_RETAILER);
+  return diversifyFinderResults(
+    sorted,
+    limit,
+    allowMassCatalog,
+    MAX_PER_RETAILER,
+  );
 }
 
 /** Filter candidates by optional hard budget bounds (soft ranking still applies). */

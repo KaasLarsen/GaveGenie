@@ -5,7 +5,6 @@ import { dkkToOre, tokenizeForSearch } from "./normalize";
 import { filterByBudget, rankProducts, type RankableProduct } from "./rank";
 import type { GiftPreferencesInput } from "./schema";
 import {
-  buildBudgetWhere,
   buildTsQueryString,
   CANDIDATE_LIMIT,
   findProductIdsByFts,
@@ -187,15 +186,8 @@ export async function findGifts(
     }
   }
 
-  // Last resort: soft budget only
-  if (products.length === 0) {
-    products = await prisma.product.findMany({
-      where: buildBudgetWhere(prefsWithBudget, { excludeSamples }),
-      include: { retailer: true },
-      take: CANDIDATE_LIMIT,
-      orderBy: { updatedAt: "desc" },
-    });
-  }
+  // No budget-only / newest-first fallback — that flooded results with Booktok.
+  // Empty catalog match → empty recommendations (better than random books).
 
   const rankable = products.map(toRankable);
   const filtered = filterByBudget(

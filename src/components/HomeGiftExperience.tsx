@@ -2,6 +2,7 @@
 
 import { FormEvent, useEffect, useId, useRef, useState, startTransition } from "react";
 import { BrandWordmark } from "./BrandWordmark";
+import { GenieWorking } from "./GenieWorking";
 import { ProductCard } from "./ProductCard";
 import type { GiftRecommendation } from "@/lib/types";
 
@@ -47,6 +48,12 @@ export function HomeGiftExperience() {
     setLoading(true);
     setError(null);
     setHasSearched(true);
+    setResults([]);
+    setMeta(null);
+
+    window.requestAnimationFrame(() => {
+      resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
 
     try {
       const res = await fetch("/api/find", {
@@ -71,9 +78,6 @@ export function HomeGiftExperience() {
           usedAi: data.usedAi,
           sampleNotice: data.sampleNotice,
         });
-      });
-      window.requestAnimationFrame(() => {
-        resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
       });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Noget gik galt");
@@ -132,7 +136,7 @@ export function HomeGiftExperience() {
                 type="submit"
                 disabled={loading}
               >
-                {loading ? "Finder…" : "Find gaver"}
+                {loading ? "Genie leder…" : "Find gaver"}
               </button>
             </div>
 
@@ -203,8 +207,10 @@ export function HomeGiftExperience() {
         >
           <div className="results-band__inner">
             <h2 id="results-band-title" className="results-band__title">
-              {loading ? "Vi leder i kataloget…" : "Dine gaveforslag"}
+              {loading ? "Genie leder efter gaver…" : "Dine gaveforslag"}
             </h2>
+
+            {loading && <GenieWorking />}
 
             {error && (
               <p className="finder-error" role="alert">
@@ -212,7 +218,7 @@ export function HomeGiftExperience() {
               </p>
             )}
 
-            {meta && results.length > 0 && (
+            {!loading && meta && results.length > 0 && (
               <div className="finder-meta">
                 {meta.sampleNotice && (
                   <p className="finder-meta__sample">{meta.sampleNotice}</p>
@@ -232,7 +238,7 @@ export function HomeGiftExperience() {
               </p>
             )}
 
-            {results.length > 0 && (
+            {!loading && results.length > 0 && (
               <div className="product-grid">
                 {results.map((product) => (
                   <ProductCard key={product.productId} product={product} />

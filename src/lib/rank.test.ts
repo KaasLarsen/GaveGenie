@@ -1,10 +1,12 @@
 import { describe, expect, it } from "vitest";
 import {
   diversifyByRetailer,
+  diversifyFinderResults,
   filterByBudget,
   rankProducts,
   type RankableProduct,
 } from "./rank";
+import { MIN_RELEVANCE_SCORE } from "./search";
 
 const catalog: RankableProduct[] = [
   {
@@ -180,6 +182,105 @@ describe("rankProducts", () => {
     expect(ranked.find((r) => r.id === "pants")).toBeFalsy();
   });
 
+  it("prefers relevant gifts over Booktok filler for non-book queries", () => {
+    const mixed: RankableProduct[] = [
+      {
+        id: "coffee",
+        title: "Pour-over kaffekande",
+        description: "Kaffebrygger til hjemmet",
+        brand: "Brew",
+        category: "Køkken",
+        tags: ["kaffe"],
+        priceOre: 34900,
+        currency: "DKK",
+        imageUrl: null,
+        productUrl: "https://example.com/coffee",
+        inStock: true,
+        isSample: false,
+        retailerName: "Demo Bolig",
+      },
+      {
+        id: "book-a",
+        title: "Beststellerroman om kærlighed",
+        description: "En roman til hyggestunden",
+        brand: "Gyldendal",
+        category: "Bøger",
+        tags: ["roman", "bog"],
+        priceOre: 19900,
+        currency: "DKK",
+        imageUrl: null,
+        productUrl: "https://example.com/book-a",
+        inStock: true,
+        isSample: false,
+        retailerName: "Booktok.dk",
+      },
+      {
+        id: "book-b",
+        title: "Krimi-thriller paperback",
+        description: "Spændende krimi",
+        brand: "Forum",
+        category: "Bøger",
+        tags: ["krimi", "bog"],
+        priceOre: 14900,
+        currency: "DKK",
+        imageUrl: null,
+        productUrl: "https://example.com/book-b",
+        inStock: true,
+        isSample: false,
+        retailerName: "Booktok.dk",
+      },
+    ];
+
+    const ranked = rankProducts(mixed, { query: "kaffe til mor" }, 3, {
+      plannedQueries: ["kaffe", "kaffekande"],
+    });
+    expect(ranked[0]?.id).toBe("coffee");
+    expect(ranked.filter((r) => r.retailerName.includes("Booktok")).length).toBe(
+      0,
+    );
+    expect(ranked[0]!.score).toBeGreaterThanOrEqual(MIN_RELEVANCE_SCORE);
+  });
+
+  it("still allows Booktok when the query asks for a book", () => {
+    const mixed: RankableProduct[] = [
+      {
+        id: "mug",
+        title: "Keramikkrus",
+        description: "Krus",
+        brand: "Studio",
+        category: "Bolig",
+        tags: ["krus"],
+        priceOre: 14900,
+        currency: "DKK",
+        imageUrl: null,
+        productUrl: "https://example.com/mug",
+        inStock: true,
+        isSample: false,
+        retailerName: "Demo Bolig",
+      },
+      {
+        id: "roman",
+        title: "Ny roman til far",
+        description: "Spændende roman",
+        brand: "Gyldendal",
+        category: "Bøger",
+        tags: ["roman", "bog"],
+        priceOre: 22900,
+        currency: "DKK",
+        imageUrl: null,
+        productUrl: "https://example.com/roman",
+        inStock: true,
+        isSample: false,
+        retailerName: "Booktok.dk",
+      },
+    ];
+
+    const ranked = rankProducts(mixed, { query: "roman til far" }, 2, {
+      plannedQueries: ["roman", "bog"],
+    });
+    expect(ranked.some((r) => r.id === "roman")).toBe(true);
+  });
+
   it("spreads results across retailers", () => {
     const sameShop: RankableProduct[] = Array.from({ length: 8 }, (_, i) => ({
       id: `jc-${i}`,
@@ -236,6 +337,32 @@ describe("diversifyByRetailer", () => {
     ];
     const out = diversifyByRetailer(items, 3, 2);
     expect(out.map((i) => i.id)).toEqual(["1", "2", "4"]);
+  });
+});
+
+describe("diversifyFinderResults", () => {
+  it("caps mass-catalog shops without book intent", () => {
+    const items = [
+      { id: "b1", retailerName: "Booktok.dk", score: 1 },
+      { id: "b2", retailerName: "Booktok.dk", score: 0.95 },
+      { id: "g1", retailerName: "Demo Bolig", score: 0.9 },
+      { id: "g2", retailerName: "Demo Outdoor", score: 0.85 },
+    ];
+    const out = diversifyFinderResults(items, 3, false);
+    expect(out.filter((i) => i.retailerName.includes("Booktok"))).toHaveLength(
+      1,
+    );
+    expect(out.map((i) => i.id)).toEqual(["b1", "g1", "g2"]);
+  });
+
+  it("does not special-cap mass catalogs with book intent", () => {
+    const items = [
+      { id: "b1", retailerName: "Booktok.dk", score: 1 },
+      { id: "b2", retailerName: "Booktok.dk", score: 0.95 },
+      { id: "g1", retailerName: "Demo Bolig", score: 0.9 },
+    ];
+    const out = diversifyFinderResults(items, 3, true);
+    expect(out.filter((i) => i.retailerName.includes("Booktok")).length).toBe(2);
   });
 });
 

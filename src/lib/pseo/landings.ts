@@ -5,6 +5,7 @@ import {
   PARTNER_ADS_PRIORITY_FEED_IDS,
 } from "../feeds/partner-ads-registry";
 import { normalizeText } from "../normalize";
+import { isMassCatalogRetailer } from "../retailers";
 import { SEO_MIN_PRODUCTS } from "./constants";
 import type { ResolvedSlug } from "./slug";
 import { resolveSlug } from "./slug";
@@ -32,13 +33,6 @@ const PRIORITY_RETAILER_NAMES = new Set(
     return (feed?.label ?? "").toLowerCase();
   }).filter(Boolean),
 );
-
-const MASS_CATALOG_RETAILER_NAMES = new Set([
-  "booktok",
-  "booktok.dk",
-  "med24",
-  "med24.dk",
-]);
 
 const STRONG_MALE_PHRASES = [
   "til ham",
@@ -106,12 +100,6 @@ function isPriorityRetailer(name: string): boolean {
     if (key.includes(priority) || priority.includes(key)) return true;
   }
   return false;
-}
-
-function isMassCatalogRetailer(name: string): boolean {
-  const key = retailerKey(name);
-  if (MASS_CATALOG_RETAILER_NAMES.has(key)) return true;
-  return key.includes("booktok") || key.includes("med24");
 }
 
 function blobFor(product: {
